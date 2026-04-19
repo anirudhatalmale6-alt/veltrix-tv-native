@@ -24,6 +24,15 @@ class CategoryAdapter(
         notifyDataSetChanged()
     }
 
+    fun setSelected(position: Int) {
+        if (position in items.indices) {
+            val old = selectedPosition
+            selectedPosition = position
+            notifyItemChanged(old)
+            notifyItemChanged(position)
+        }
+    }
+
     inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val tvName: TextView = itemView as TextView
 

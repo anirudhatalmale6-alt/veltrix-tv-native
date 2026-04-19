@@ -150,7 +150,10 @@ class SeriesFragment : Fragment(), MainActivity.DpadNavigable {
                 val fullList = listOf(allCategory) + categories
                 categoryAdapter.submitList(fullList)
 
-                loadSeries("0")
+                // Load first real category instead of "All" to avoid loading thousands of series
+                val firstCategoryId = if (categories.isNotEmpty()) categories[0].categoryId else "0"
+                categoryAdapter.setSelected(if (categories.isNotEmpty()) 1 else 0)
+                loadSeries(firstCategoryId)
             } catch (e: Exception) {
                 progressBar.gone()
                 tvEmpty.text = getString(R.string.error_loading)

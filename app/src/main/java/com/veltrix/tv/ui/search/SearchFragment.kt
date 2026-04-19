@@ -43,10 +43,6 @@ class SearchFragment : Fragment() {
     private lateinit var tabMovies: TextView
     private lateinit var tabSeries: TextView
 
-    private var allLive = listOf<LiveStream>()
-    private var allVod = listOf<VodStream>()
-    private var allSeries = listOf<SeriesItem>()
-    private var dataLoaded = false
     private var searchJob: Job? = null
     private var currentFilter = "all"
 
@@ -73,7 +69,6 @@ class SearchFragment : Fragment() {
 
         setupTabs()
         setupSearch()
-        loadAllData()
     }
 
     private fun setupTabs() {
@@ -84,7 +79,10 @@ class SearchFragment : Fragment() {
             tab.setOnClickListener {
                 currentFilter = filters[index]
                 updateTabUI(tabs, index)
-                performSearch(etSearch.text.toString())
+                val query = etSearch.text.toString()
+                if (query.length >= 2) {
+                    performSearch(query)
+                }
             }
             tab.setOnFocusChangeListener { v, hasFocus ->
                 if (hasFocus) {
@@ -97,7 +95,6 @@ class SearchFragment : Fragment() {
     }
 
     private fun updateTabUI(tabs: List<TextView>, selectedIndex: Int) {
-        val filters = listOf("all", "live", "vod", "series")
         tabs.forEachIndexed { index, tab ->
             if (index == selectedIndex) {
                 tab.setTextColor(resources.getColor(R.color.red, null))
@@ -116,90 +113,128 @@ class SearchFragment : Fragment() {
             override fun afterTextChanged(s: Editable?) {
                 searchJob?.cancel()
                 searchJob = viewLifecycleOwner.lifecycleScope.launch {
-                    delay(300) // debounce
+                    delay(500) // debounce
                     performSearch(s?.toString() ?: "")
                 }
             }
         })
     }
 
-    private fun loadAllData() {
-        val prefs = MainActivity.prefsInstance
-        progressBar.visible()
-        tvEmpty.gone()
-
-        viewLifecycleOwner.lifecycleScope.launch {
-            try {
-                val live = withContext(Dispatchers.IO) {
-                    MainActivity.apiService.getLiveStreams(prefs.username, prefs.password)
-                }
-                val vod = withContext(Dispatchers.IO) {
-                    MainActivity.apiService.getVodStreams(prefs.username, prefs.password)
-                }
-                val series = withContext(Dispatchers.IO) {
-                    MainActivity.apiService.getSeries(prefs.username, prefs.password)
-                }
-
-                allLive = live
-                allVod = vod
-                allSeries = series
-                dataLoaded = true
-                progressBar.gone()
-                tvEmpty.text = "Type to search ${live.size + vod.size + series.size} items..."
-                tvEmpty.visible()
-            } catch (e: Exception) {
-                progressBar.gone()
-                tvEmpty.text = "Error loading data"
-                tvEmpty.visible()
-            }
-        }
-    }
-
     private fun performSearch(query: String) {
-        if (!dataLoaded) return
         if (query.length < 2) {
             rvResults.adapter = null
             tvEmpty.text = "Type to search..."
             tvEmpty.visible()
+            progressBar.gone()
             return
         }
 
-        val q = query.lowercase()
-        val results = mutableListOf<SearchResult>()
+        val prefs = MainActivity.prefsInstance
+        progressBar.visible()
+        tvEmpty.gone()
 
-        if (currentFilter == "all" || currentFilter == "live") {
-            allLive.filter { it.name.lowercase().contains(q) }
-                .take(50)
-                .mapTo(results) {
-                    SearchResult(it.name, it.streamIcon, "Live", streamId = it.streamId, type = "live")
+        searchJob?.cancel()
+        searchJob = viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val results = mutableListOf<SearchResult>()
+                val q = query.lowercase()
+
+                // Search live channels (load one category at a time, search by name)
+                if (currentFilter == "all" || currentFilter == "live") {
+                    try {
+                        val categories = withContext(Dispatchers.IO) {
+                            MainActivity.apiService.getLiveCategories(prefs.username, prefs.password)
+                        }
+                        // Search through first 10 categories max to keep it fast
+                        val categoriesToSearch = categories.take(10)
+                        for (cat in categoriesToSearch) {
+                            if (results.size >= 30) break
+                            try {
+                                val streams = withContext(Dispatchers.IO) {
+                                    MainActivity.apiService.getLiveStreams(
+                                        prefs.username, prefs.password,
+                                        categoryId = cat.categoryId
+                                    )
+                                }
+                                streams.filter { it.name.lowercase().contains(q) }
+                                    .take(10)
+                                    .mapTo(results) {
+                                        SearchResult(it.name, it.streamIcon, "Live", streamId = it.streamId, type = "live")
+                                    }
+                            } catch (_: Exception) {}
+                        }
+                    } catch (_: Exception) {}
                 }
-        }
 
-        if (currentFilter == "all" || currentFilter == "vod") {
-            allVod.filter { it.name.lowercase().contains(q) }
-                .take(50)
-                .mapTo(results) {
-                    SearchResult(it.name, it.streamIcon, "Movie", streamId = it.streamId, type = "vod",
-                        containerExtension = it.containerExtension)
+                // Search movies
+                if (currentFilter == "all" || currentFilter == "vod") {
+                    try {
+                        val categories = withContext(Dispatchers.IO) {
+                            MainActivity.apiService.getVodCategories(prefs.username, prefs.password)
+                        }
+                        val categoriesToSearch = categories.take(10)
+                        for (cat in categoriesToSearch) {
+                            if (results.size >= 50) break
+                            try {
+                                val streams = withContext(Dispatchers.IO) {
+                                    MainActivity.apiService.getVodStreams(
+                                        prefs.username, prefs.password,
+                                        categoryId = cat.categoryId
+                                    )
+                                }
+                                streams.filter { it.name.lowercase().contains(q) }
+                                    .take(10)
+                                    .mapTo(results) {
+                                        SearchResult(it.name, it.streamIcon, "Movie", streamId = it.streamId, type = "vod",
+                                            containerExtension = it.containerExtension)
+                                    }
+                            } catch (_: Exception) {}
+                        }
+                    } catch (_: Exception) {}
                 }
-        }
 
-        if (currentFilter == "all" || currentFilter == "series") {
-            allSeries.filter { it.name.lowercase().contains(q) }
-                .take(50)
-                .mapTo(results) {
-                    SearchResult(it.name, it.cover, "Series", seriesId = it.seriesId, type = "series")
+                // Search series
+                if (currentFilter == "all" || currentFilter == "series") {
+                    try {
+                        val categories = withContext(Dispatchers.IO) {
+                            MainActivity.apiService.getSeriesCategories(prefs.username, prefs.password)
+                        }
+                        val categoriesToSearch = categories.take(10)
+                        for (cat in categoriesToSearch) {
+                            if (results.size >= 70) break
+                            try {
+                                val series = withContext(Dispatchers.IO) {
+                                    MainActivity.apiService.getSeries(
+                                        prefs.username, prefs.password,
+                                        categoryId = cat.categoryId
+                                    )
+                                }
+                                series.filter { it.name.lowercase().contains(q) }
+                                    .take(10)
+                                    .mapTo(results) {
+                                        SearchResult(it.name, it.cover, "Series", seriesId = it.seriesId, type = "series")
+                                    }
+                            } catch (_: Exception) {}
+                        }
+                    } catch (_: Exception) {}
                 }
-        }
 
-        if (results.isEmpty()) {
-            tvEmpty.text = "No results for \"$query\""
-            tvEmpty.visible()
-            rvResults.adapter = null
-        } else {
-            tvEmpty.gone()
-            rvResults.adapter = SearchResultAdapter(results) { result ->
-                openResult(result)
+                progressBar.gone()
+
+                if (results.isEmpty()) {
+                    tvEmpty.text = "No results for \"$query\""
+                    tvEmpty.visible()
+                    rvResults.adapter = null
+                } else {
+                    tvEmpty.gone()
+                    rvResults.adapter = SearchResultAdapter(results) { result ->
+                        openResult(result)
+                    }
+                }
+            } catch (e: Exception) {
+                progressBar.gone()
+                tvEmpty.text = "Search error"
+                tvEmpty.visible()
             }
         }
     }

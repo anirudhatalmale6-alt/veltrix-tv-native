@@ -146,7 +146,10 @@ class LiveFragment : Fragment(), MainActivity.DpadNavigable {
                 val fullList = listOf(allCategory) + categories
                 categoryAdapter.submitList(fullList)
 
-                loadStreams("0")
+                // Load first real category instead of "All" to avoid loading thousands of channels
+                val firstCategoryId = if (categories.isNotEmpty()) categories[0].categoryId else "0"
+                categoryAdapter.setSelected(if (categories.isNotEmpty()) 1 else 0)
+                loadStreams(firstCategoryId)
             } catch (e: Exception) {
                 progressBar.gone()
                 tvEmpty.text = getString(R.string.error_loading)
