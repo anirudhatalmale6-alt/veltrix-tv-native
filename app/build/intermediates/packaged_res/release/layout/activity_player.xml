@@ -11,9 +11,10 @@
         android:layout_height="match_parent"
         app:use_controller="false"
         app:show_buffering="when_playing"
-        app:surface_type="surface_view" />
+        app:surface_type="surface_view"
+        app:show_subtitle_button="true" />
 
-    <!-- Channel info overlay -->
+    <!-- Channel info overlay (top) -->
     <LinearLayout
         android:id="@+id/overlayInfo"
         android:layout_width="match_parent"
@@ -39,6 +40,127 @@
             android:textColor="@color/text_secondary"
             android:textSize="16sp"
             android:layout_marginTop="4dp" />
+
+    </LinearLayout>
+
+    <!-- On-screen controls (bottom) -->
+    <LinearLayout
+        android:id="@+id/controlsOverlay"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:orientation="vertical"
+        android:background="@color/overlay_bg"
+        android:padding="16dp"
+        android:visibility="gone">
+
+        <!-- Seek bar row -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="8dp">
+
+            <TextView
+                android:id="@+id/tvPosition"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="00:00"
+                android:textColor="@color/white"
+                android:textSize="13sp" />
+
+            <SeekBar
+                android:id="@+id/seekBar"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:layout_marginStart="8dp"
+                android:layout_marginEnd="8dp"
+                android:max="1000"
+                android:progressTint="@color/red"
+                android:thumbTint="@color/red"
+                android:progressBackgroundTint="@color/text_dim"
+                android:focusable="true"
+                android:focusableInTouchMode="true" />
+
+            <TextView
+                android:id="@+id/tvDuration"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="00:00"
+                android:textColor="@color/white"
+                android:textSize="13sp" />
+
+        </LinearLayout>
+
+        <!-- Buttons row -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center">
+
+            <ImageButton
+                android:id="@+id/btnRewind"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:src="@android:drawable/ic_media_rew"
+                android:background="?android:attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Rewind 10s"
+                android:layout_marginEnd="24dp"
+                android:scaleType="centerInside"
+                android:focusable="true"
+                android:focusableInTouchMode="true" />
+
+            <ImageButton
+                android:id="@+id/btnPlayPause"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:src="@android:drawable/ic_media_pause"
+                android:background="?android:attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Play/Pause"
+                android:scaleType="centerInside"
+                android:focusable="true"
+                android:focusableInTouchMode="true" />
+
+            <ImageButton
+                android:id="@+id/btnForward"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:src="@android:drawable/ic_media_ff"
+                android:background="?android:attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Forward 10s"
+                android:layout_marginStart="24dp"
+                android:scaleType="centerInside"
+                android:focusable="true"
+                android:focusableInTouchMode="true" />
+
+            <ImageButton
+                android:id="@+id/btnSubtitles"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:src="@android:drawable/ic_btn_speak_now"
+                android:background="?android:attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Subtitles"
+                android:layout_marginStart="32dp"
+                android:scaleType="centerInside"
+                android:focusable="true"
+                android:focusableInTouchMode="true" />
+
+            <ImageButton
+                android:id="@+id/btnPip"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:src="@android:drawable/ic_menu_crop"
+                android:background="?android:attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Picture in Picture"
+                android:layout_marginStart="16dp"
+                android:scaleType="centerInside"
+                android:focusable="true"
+                android:focusableInTouchMode="true" />
+
+        </LinearLayout>
 
     </LinearLayout>
 

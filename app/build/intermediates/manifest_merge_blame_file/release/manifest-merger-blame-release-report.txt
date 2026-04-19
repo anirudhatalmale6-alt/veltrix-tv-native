@@ -1,8 +1,8 @@
 1<?xml version="1.0" encoding="utf-8"?>
 2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
 3    package="com.veltrix.tv"
-4    android:versionCode="1"
-5    android:versionName="1.0.0" >
+4    android:versionCode="5"
+5    android:versionName="1.0.5" >
 6
 7    <uses-sdk
 8        android:minSdkVersion="21"
@@ -40,7 +40,7 @@
 25-->[androidx.core:core:1.12.0] /home/freelancer8/.gradle/caches/transforms-3/61099e8c00b8028e332fc0fb007b93c9/transformed/core-1.12.0/AndroidManifest.xml:26:22-94
 26
 27    <application
-27-->/var/lib/freelancer/projects/40373506/veltrix-tv-native/app/src/main/AndroidManifest.xml:15:5-53:19
+27-->/var/lib/freelancer/projects/40373506/veltrix-tv-native/app/src/main/AndroidManifest.xml:15:5-54:19
 28        android:name="com.veltrix.tv.VeltrixApp"
 28-->/var/lib/freelancer/projects/40373506/veltrix-tv-native/app/src/main/AndroidManifest.xml:16:9-35
 29        android:allowBackup="true"
@@ -93,98 +93,100 @@
 53            android:exported="false" />
 53-->/var/lib/freelancer/projects/40373506/veltrix-tv-native/app/src/main/AndroidManifest.xml:39:13-37
 54        <activity
-54-->/var/lib/freelancer/projects/40373506/veltrix-tv-native/app/src/main/AndroidManifest.xml:42:9-46:54
+54-->/var/lib/freelancer/projects/40373506/veltrix-tv-native/app/src/main/AndroidManifest.xml:42:9-47:54
 55            android:name="com.veltrix.tv.ui.player.PlayerActivity"
 55-->/var/lib/freelancer/projects/40373506/veltrix-tv-native/app/src/main/AndroidManifest.xml:43:13-53
-56            android:configChanges="orientation|screenSize|keyboardHidden"
-56-->/var/lib/freelancer/projects/40373506/veltrix-tv-native/app/src/main/AndroidManifest.xml:45:13-74
+56            android:configChanges="orientation|screenSize|keyboardHidden|smallestScreenSize|screenLayout"
+56-->/var/lib/freelancer/projects/40373506/veltrix-tv-native/app/src/main/AndroidManifest.xml:45:13-106
 57            android:exported="false"
 57-->/var/lib/freelancer/projects/40373506/veltrix-tv-native/app/src/main/AndroidManifest.xml:44:13-37
-58            android:theme="@style/AppTheme.Player" />
-58-->/var/lib/freelancer/projects/40373506/veltrix-tv-native/app/src/main/AndroidManifest.xml:46:13-51
-59        <activity
-59-->/var/lib/freelancer/projects/40373506/veltrix-tv-native/app/src/main/AndroidManifest.xml:48:9-51:77
-60            android:name="com.veltrix.tv.ui.series.SeriesDetailActivity"
-60-->/var/lib/freelancer/projects/40373506/veltrix-tv-native/app/src/main/AndroidManifest.xml:49:13-59
-61            android:configChanges="orientation|screenSize|keyboardHidden"
-61-->/var/lib/freelancer/projects/40373506/veltrix-tv-native/app/src/main/AndroidManifest.xml:51:13-74
-62            android:exported="false" />
-62-->/var/lib/freelancer/projects/40373506/veltrix-tv-native/app/src/main/AndroidManifest.xml:50:13-37
-63
-64        <provider
-64-->[androidx.emoji2:emoji2:1.2.0] /home/freelancer8/.gradle/caches/transforms-3/494960ca87c145cbc6d98a8ffaca2bba/transformed/emoji2-1.2.0/AndroidManifest.xml:24:9-32:20
-65            android:name="androidx.startup.InitializationProvider"
-65-->[androidx.emoji2:emoji2:1.2.0] /home/freelancer8/.gradle/caches/transforms-3/494960ca87c145cbc6d98a8ffaca2bba/transformed/emoji2-1.2.0/AndroidManifest.xml:25:13-67
-66            android:authorities="com.veltrix.tv.androidx-startup"
-66-->[androidx.emoji2:emoji2:1.2.0] /home/freelancer8/.gradle/caches/transforms-3/494960ca87c145cbc6d98a8ffaca2bba/transformed/emoji2-1.2.0/AndroidManifest.xml:26:13-68
-67            android:exported="false" >
-67-->[androidx.emoji2:emoji2:1.2.0] /home/freelancer8/.gradle/caches/transforms-3/494960ca87c145cbc6d98a8ffaca2bba/transformed/emoji2-1.2.0/AndroidManifest.xml:27:13-37
-68            <meta-data
-68-->[androidx.emoji2:emoji2:1.2.0] /home/freelancer8/.gradle/caches/transforms-3/494960ca87c145cbc6d98a8ffaca2bba/transformed/emoji2-1.2.0/AndroidManifest.xml:29:13-31:52
-69                android:name="androidx.emoji2.text.EmojiCompatInitializer"
-69-->[androidx.emoji2:emoji2:1.2.0] /home/freelancer8/.gradle/caches/transforms-3/494960ca87c145cbc6d98a8ffaca2bba/transformed/emoji2-1.2.0/AndroidManifest.xml:30:17-75
-70                android:value="androidx.startup" />
-70-->[androidx.emoji2:emoji2:1.2.0] /home/freelancer8/.gradle/caches/transforms-3/494960ca87c145cbc6d98a8ffaca2bba/transformed/emoji2-1.2.0/AndroidManifest.xml:31:17-49
-71            <meta-data
-71-->[androidx.lifecycle:lifecycle-process:2.6.2] /home/freelancer8/.gradle/caches/transforms-3/079cc2025c35c7b515b610812d7f2b2b/transformed/lifecycle-process-2.6.2/AndroidManifest.xml:29:13-31:52
-72                android:name="androidx.lifecycle.ProcessLifecycleInitializer"
-72-->[androidx.lifecycle:lifecycle-process:2.6.2] /home/freelancer8/.gradle/caches/transforms-3/079cc2025c35c7b515b610812d7f2b2b/transformed/lifecycle-process-2.6.2/AndroidManifest.xml:30:17-78
-73                android:value="androidx.startup" />
-73-->[androidx.lifecycle:lifecycle-process:2.6.2] /home/freelancer8/.gradle/caches/transforms-3/079cc2025c35c7b515b610812d7f2b2b/transformed/lifecycle-process-2.6.2/AndroidManifest.xml:31:17-49
-74            <meta-data
-74-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/freelancer8/.gradle/caches/transforms-3/e43a04d475d1d7129600778eb8a037eb/transformed/profileinstaller-1.3.1/AndroidManifest.xml:29:13-31:52
-75                android:name="androidx.profileinstaller.ProfileInstallerInitializer"
-75-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/freelancer8/.gradle/caches/transforms-3/e43a04d475d1d7129600778eb8a037eb/transformed/profileinstaller-1.3.1/AndroidManifest.xml:30:17-85
-76                android:value="androidx.startup" />
-76-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/freelancer8/.gradle/caches/transforms-3/e43a04d475d1d7129600778eb8a037eb/transformed/profileinstaller-1.3.1/AndroidManifest.xml:31:17-49
-77        </provider>
-78
-79        <service
-79-->[androidx.room:room-runtime:2.6.1] /home/freelancer8/.gradle/caches/transforms-3/6573468bf591a735728a10cdec1a59e9/transformed/room-runtime-2.6.1/AndroidManifest.xml:24:9-28:63
-80            android:name="androidx.room.MultiInstanceInvalidationService"
-80-->[androidx.room:room-runtime:2.6.1] /home/freelancer8/.gradle/caches/transforms-3/6573468bf591a735728a10cdec1a59e9/transformed/room-runtime-2.6.1/AndroidManifest.xml:25:13-74
-81            android:directBootAware="true"
-81-->[androidx.room:room-runtime:2.6.1] /home/freelancer8/.gradle/caches/transforms-3/6573468bf591a735728a10cdec1a59e9/transformed/room-runtime-2.6.1/AndroidManifest.xml:26:13-43
-82            android:exported="false" />
-82-->[androidx.room:room-runtime:2.6.1] /home/freelancer8/.gradle/caches/transforms-3/6573468bf591a735728a10cdec1a59e9/transformed/room-runtime-2.6.1/AndroidManifest.xml:27:13-37
-83
-84        <receiver
-84-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/freelancer8/.gradle/caches/transforms-3/e43a04d475d1d7129600778eb8a037eb/transformed/profileinstaller-1.3.1/AndroidManifest.xml:34:9-52:20
-85            android:name="androidx.profileinstaller.ProfileInstallReceiver"
-85-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/freelancer8/.gradle/caches/transforms-3/e43a04d475d1d7129600778eb8a037eb/transformed/profileinstaller-1.3.1/AndroidManifest.xml:35:13-76
-86            android:directBootAware="false"
-86-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/freelancer8/.gradle/caches/transforms-3/e43a04d475d1d7129600778eb8a037eb/transformed/profileinstaller-1.3.1/AndroidManifest.xml:36:13-44
-87            android:enabled="true"
-87-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/freelancer8/.gradle/caches/transforms-3/e43a04d475d1d7129600778eb8a037eb/transformed/profileinstaller-1.3.1/AndroidManifest.xml:37:13-35
-88            android:exported="true"
-88-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/freelancer8/.gradle/caches/transforms-3/e43a04d475d1d7129600778eb8a037eb/transformed/profileinstaller-1.3.1/AndroidManifest.xml:38:13-36
-89            android:permission="android.permission.DUMP" >
-89-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/freelancer8/.gradle/caches/transforms-3/e43a04d475d1d7129600778eb8a037eb/transformed/profileinstaller-1.3.1/AndroidManifest.xml:39:13-57
-90            <intent-filter>
-90-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/freelancer8/.gradle/caches/transforms-3/e43a04d475d1d7129600778eb8a037eb/transformed/profileinstaller-1.3.1/AndroidManifest.xml:40:13-42:29
-91                <action android:name="androidx.profileinstaller.action.INSTALL_PROFILE" />
-91-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/freelancer8/.gradle/caches/transforms-3/e43a04d475d1d7129600778eb8a037eb/transformed/profileinstaller-1.3.1/AndroidManifest.xml:41:17-91
-91-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/freelancer8/.gradle/caches/transforms-3/e43a04d475d1d7129600778eb8a037eb/transformed/profileinstaller-1.3.1/AndroidManifest.xml:41:25-88
-92            </intent-filter>
-93            <intent-filter>
-93-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/freelancer8/.gradle/caches/transforms-3/e43a04d475d1d7129600778eb8a037eb/transformed/profileinstaller-1.3.1/AndroidManifest.xml:43:13-45:29
-94                <action android:name="androidx.profileinstaller.action.SKIP_FILE" />
-94-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/freelancer8/.gradle/caches/transforms-3/e43a04d475d1d7129600778eb8a037eb/transformed/profileinstaller-1.3.1/AndroidManifest.xml:44:17-85
-94-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/freelancer8/.gradle/caches/transforms-3/e43a04d475d1d7129600778eb8a037eb/transformed/profileinstaller-1.3.1/AndroidManifest.xml:44:25-82
-95            </intent-filter>
-96            <intent-filter>
-96-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/freelancer8/.gradle/caches/transforms-3/e43a04d475d1d7129600778eb8a037eb/transformed/profileinstaller-1.3.1/AndroidManifest.xml:46:13-48:29
-97                <action android:name="androidx.profileinstaller.action.SAVE_PROFILE" />
-97-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/freelancer8/.gradle/caches/transforms-3/e43a04d475d1d7129600778eb8a037eb/transformed/profileinstaller-1.3.1/AndroidManifest.xml:47:17-88
-97-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/freelancer8/.gradle/caches/transforms-3/e43a04d475d1d7129600778eb8a037eb/transformed/profileinstaller-1.3.1/AndroidManifest.xml:47:25-85
-98            </intent-filter>
-99            <intent-filter>
-99-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/freelancer8/.gradle/caches/transforms-3/e43a04d475d1d7129600778eb8a037eb/transformed/profileinstaller-1.3.1/AndroidManifest.xml:49:13-51:29
-100                <action android:name="androidx.profileinstaller.action.BENCHMARK_OPERATION" />
-100-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/freelancer8/.gradle/caches/transforms-3/e43a04d475d1d7129600778eb8a037eb/transformed/profileinstaller-1.3.1/AndroidManifest.xml:50:17-95
-100-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/freelancer8/.gradle/caches/transforms-3/e43a04d475d1d7129600778eb8a037eb/transformed/profileinstaller-1.3.1/AndroidManifest.xml:50:25-92
-101            </intent-filter>
-102        </receiver>
-103    </application>
-104
-105</manifest>
+58            android:supportsPictureInPicture="true"
+58-->/var/lib/freelancer/projects/40373506/veltrix-tv-native/app/src/main/AndroidManifest.xml:46:13-52
+59            android:theme="@style/AppTheme.Player" />
+59-->/var/lib/freelancer/projects/40373506/veltrix-tv-native/app/src/main/AndroidManifest.xml:47:13-51
+60        <activity
+60-->/var/lib/freelancer/projects/40373506/veltrix-tv-native/app/src/main/AndroidManifest.xml:49:9-52:77
+61            android:name="com.veltrix.tv.ui.series.SeriesDetailActivity"
+61-->/var/lib/freelancer/projects/40373506/veltrix-tv-native/app/src/main/AndroidManifest.xml:50:13-59
+62            android:configChanges="orientation|screenSize|keyboardHidden"
+62-->/var/lib/freelancer/projects/40373506/veltrix-tv-native/app/src/main/AndroidManifest.xml:52:13-74
+63            android:exported="false" />
+63-->/var/lib/freelancer/projects/40373506/veltrix-tv-native/app/src/main/AndroidManifest.xml:51:13-37
+64
+65        <provider
+65-->[androidx.emoji2:emoji2:1.2.0] /home/freelancer8/.gradle/caches/transforms-3/494960ca87c145cbc6d98a8ffaca2bba/transformed/emoji2-1.2.0/AndroidManifest.xml:24:9-32:20
+66            android:name="androidx.startup.InitializationProvider"
+66-->[androidx.emoji2:emoji2:1.2.0] /home/freelancer8/.gradle/caches/transforms-3/494960ca87c145cbc6d98a8ffaca2bba/transformed/emoji2-1.2.0/AndroidManifest.xml:25:13-67
+67            android:authorities="com.veltrix.tv.androidx-startup"
+67-->[androidx.emoji2:emoji2:1.2.0] /home/freelancer8/.gradle/caches/transforms-3/494960ca87c145cbc6d98a8ffaca2bba/transformed/emoji2-1.2.0/AndroidManifest.xml:26:13-68
+68            android:exported="false" >
+68-->[androidx.emoji2:emoji2:1.2.0] /home/freelancer8/.gradle/caches/transforms-3/494960ca87c145cbc6d98a8ffaca2bba/transformed/emoji2-1.2.0/AndroidManifest.xml:27:13-37
+69            <meta-data
+69-->[androidx.emoji2:emoji2:1.2.0] /home/freelancer8/.gradle/caches/transforms-3/494960ca87c145cbc6d98a8ffaca2bba/transformed/emoji2-1.2.0/AndroidManifest.xml:29:13-31:52
+70                android:name="androidx.emoji2.text.EmojiCompatInitializer"
+70-->[androidx.emoji2:emoji2:1.2.0] /home/freelancer8/.gradle/caches/transforms-3/494960ca87c145cbc6d98a8ffaca2bba/transformed/emoji2-1.2.0/AndroidManifest.xml:30:17-75
+71                android:value="androidx.startup" />
+71-->[androidx.emoji2:emoji2:1.2.0] /home/freelancer8/.gradle/caches/transforms-3/494960ca87c145cbc6d98a8ffaca2bba/transformed/emoji2-1.2.0/AndroidManifest.xml:31:17-49
+72            <meta-data
+72-->[androidx.lifecycle:lifecycle-process:2.6.2] /home/freelancer8/.gradle/caches/transforms-3/079cc2025c35c7b515b610812d7f2b2b/transformed/lifecycle-process-2.6.2/AndroidManifest.xml:29:13-31:52
+73                android:name="androidx.lifecycle.ProcessLifecycleInitializer"
+73-->[androidx.lifecycle:lifecycle-process:2.6.2] /home/freelancer8/.gradle/caches/transforms-3/079cc2025c35c7b515b610812d7f2b2b/transformed/lifecycle-process-2.6.2/AndroidManifest.xml:30:17-78
+74                android:value="androidx.startup" />
+74-->[androidx.lifecycle:lifecycle-process:2.6.2] /home/freelancer8/.gradle/caches/transforms-3/079cc2025c35c7b515b610812d7f2b2b/transformed/lifecycle-process-2.6.2/AndroidManifest.xml:31:17-49
+75            <meta-data
+75-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/freelancer8/.gradle/caches/transforms-3/e43a04d475d1d7129600778eb8a037eb/transformed/profileinstaller-1.3.1/AndroidManifest.xml:29:13-31:52
+76                android:name="androidx.profileinstaller.ProfileInstallerInitializer"
+76-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/freelancer8/.gradle/caches/transforms-3/e43a04d475d1d7129600778eb8a037eb/transformed/profileinstaller-1.3.1/AndroidManifest.xml:30:17-85
+77                android:value="androidx.startup" />
+77-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/freelancer8/.gradle/caches/transforms-3/e43a04d475d1d7129600778eb8a037eb/transformed/profileinstaller-1.3.1/AndroidManifest.xml:31:17-49
+78        </provider>
+79
+80        <service
+80-->[androidx.room:room-runtime:2.6.1] /home/freelancer8/.gradle/caches/transforms-3/6573468bf591a735728a10cdec1a59e9/transformed/room-runtime-2.6.1/AndroidManifest.xml:24:9-28:63
+81            android:name="androidx.room.MultiInstanceInvalidationService"
+81-->[androidx.room:room-runtime:2.6.1] /home/freelancer8/.gradle/caches/transforms-3/6573468bf591a735728a10cdec1a59e9/transformed/room-runtime-2.6.1/AndroidManifest.xml:25:13-74
+82            android:directBootAware="true"
+82-->[androidx.room:room-runtime:2.6.1] /home/freelancer8/.gradle/caches/transforms-3/6573468bf591a735728a10cdec1a59e9/transformed/room-runtime-2.6.1/AndroidManifest.xml:26:13-43
+83            android:exported="false" />
+83-->[androidx.room:room-runtime:2.6.1] /home/freelancer8/.gradle/caches/transforms-3/6573468bf591a735728a10cdec1a59e9/transformed/room-runtime-2.6.1/AndroidManifest.xml:27:13-37
+84
+85        <receiver
+85-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/freelancer8/.gradle/caches/transforms-3/e43a04d475d1d7129600778eb8a037eb/transformed/profileinstaller-1.3.1/AndroidManifest.xml:34:9-52:20
+86            android:name="androidx.profileinstaller.ProfileInstallReceiver"
+86-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/freelancer8/.gradle/caches/transforms-3/e43a04d475d1d7129600778eb8a037eb/transformed/profileinstaller-1.3.1/AndroidManifest.xml:35:13-76
+87            android:directBootAware="false"
+87-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/freelancer8/.gradle/caches/transforms-3/e43a04d475d1d7129600778eb8a037eb/transformed/profileinstaller-1.3.1/AndroidManifest.xml:36:13-44
+88            android:enabled="true"
+88-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/freelancer8/.gradle/caches/transforms-3/e43a04d475d1d7129600778eb8a037eb/transformed/profileinstaller-1.3.1/AndroidManifest.xml:37:13-35
+89            android:exported="true"
+89-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/freelancer8/.gradle/caches/transforms-3/e43a04d475d1d7129600778eb8a037eb/transformed/profileinstaller-1.3.1/AndroidManifest.xml:38:13-36
+90            android:permission="android.permission.DUMP" >
+90-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/freelancer8/.gradle/caches/transforms-3/e43a04d475d1d7129600778eb8a037eb/transformed/profileinstaller-1.3.1/AndroidManifest.xml:39:13-57
+91            <intent-filter>
+91-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/freelancer8/.gradle/caches/transforms-3/e43a04d475d1d7129600778eb8a037eb/transformed/profileinstaller-1.3.1/AndroidManifest.xml:40:13-42:29
+92                <action android:name="androidx.profileinstaller.action.INSTALL_PROFILE" />
+92-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/freelancer8/.gradle/caches/transforms-3/e43a04d475d1d7129600778eb8a037eb/transformed/profileinstaller-1.3.1/AndroidManifest.xml:41:17-91
+92-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/freelancer8/.gradle/caches/transforms-3/e43a04d475d1d7129600778eb8a037eb/transformed/profileinstaller-1.3.1/AndroidManifest.xml:41:25-88
+93            </intent-filter>
+94            <intent-filter>
+94-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/freelancer8/.gradle/caches/transforms-3/e43a04d475d1d7129600778eb8a037eb/transformed/profileinstaller-1.3.1/AndroidManifest.xml:43:13-45:29
+95                <action android:name="androidx.profileinstaller.action.SKIP_FILE" />
+95-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/freelancer8/.gradle/caches/transforms-3/e43a04d475d1d7129600778eb8a037eb/transformed/profileinstaller-1.3.1/AndroidManifest.xml:44:17-85
+95-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/freelancer8/.gradle/caches/transforms-3/e43a04d475d1d7129600778eb8a037eb/transformed/profileinstaller-1.3.1/AndroidManifest.xml:44:25-82
+96            </intent-filter>
+97            <intent-filter>
+97-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/freelancer8/.gradle/caches/transforms-3/e43a04d475d1d7129600778eb8a037eb/transformed/profileinstaller-1.3.1/AndroidManifest.xml:46:13-48:29
+98                <action android:name="androidx.profileinstaller.action.SAVE_PROFILE" />
+98-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/freelancer8/.gradle/caches/transforms-3/e43a04d475d1d7129600778eb8a037eb/transformed/profileinstaller-1.3.1/AndroidManifest.xml:47:17-88
+98-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/freelancer8/.gradle/caches/transforms-3/e43a04d475d1d7129600778eb8a037eb/transformed/profileinstaller-1.3.1/AndroidManifest.xml:47:25-85
+99            </intent-filter>
+100            <intent-filter>
+100-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/freelancer8/.gradle/caches/transforms-3/e43a04d475d1d7129600778eb8a037eb/transformed/profileinstaller-1.3.1/AndroidManifest.xml:49:13-51:29
+101                <action android:name="androidx.profileinstaller.action.BENCHMARK_OPERATION" />
+101-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/freelancer8/.gradle/caches/transforms-3/e43a04d475d1d7129600778eb8a037eb/transformed/profileinstaller-1.3.1/AndroidManifest.xml:50:17-95
+101-->[androidx.profileinstaller:profileinstaller:1.3.1] /home/freelancer8/.gradle/caches/transforms-3/e43a04d475d1d7129600778eb8a037eb/transformed/profileinstaller-1.3.1/AndroidManifest.xml:50:25-92
+102            </intent-filter>
+103        </receiver>
+104    </application>
+105
+106</manifest>

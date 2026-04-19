@@ -11,7 +11,9 @@ import com.veltrix.tv.R
 import com.veltrix.tv.data.PrefsManager
 import com.veltrix.tv.data.api.XtreamApiService
 import com.veltrix.tv.ui.favorites.FavoritesFragment
+import com.veltrix.tv.ui.history.HistoryFragment
 import com.veltrix.tv.ui.live.LiveFragment
+import com.veltrix.tv.ui.search.SearchFragment
 import com.veltrix.tv.ui.series.SeriesFragment
 import com.veltrix.tv.ui.settings.SettingsFragment
 import com.veltrix.tv.ui.vod.VodFragment
@@ -62,7 +64,10 @@ class MainActivity : AppCompatActivity() {
 
     private fun initApi() {
         val baseUrl = prefs.getBaseUrl().trimEnd('/') + "/"
+        val cacheDir = java.io.File(cacheDir, "http_cache")
+        val cache = okhttp3.Cache(cacheDir, 50L * 1024 * 1024) // 50MB cache
         val client = OkHttpClient.Builder()
+            .cache(cache)
             .connectTimeout(30, TimeUnit.SECONDS)
             .readTimeout(30, TimeUnit.SECONDS)
             .build()
@@ -95,6 +100,8 @@ class MainActivity : AppCompatActivity() {
                 SidebarFragment.ID_LIVE -> LiveFragment()
                 SidebarFragment.ID_MOVIES -> VodFragment()
                 SidebarFragment.ID_SERIES -> SeriesFragment()
+                SidebarFragment.ID_SEARCH -> SearchFragment()
+                SidebarFragment.ID_HISTORY -> HistoryFragment()
                 SidebarFragment.ID_FAVORITES -> FavoritesFragment()
                 SidebarFragment.ID_SETTINGS -> SettingsFragment()
                 else -> LiveFragment()

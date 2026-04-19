@@ -96,6 +96,8 @@ class SeriesFragment : Fragment(), MainActivity.DpadNavigable {
         val columns = calculateGridColumns()
         rvSeries.layoutManager = GridLayoutManager(requireContext(), columns)
         rvSeries.adapter = seriesAdapter
+        rvSeries.setHasFixedSize(true)
+        rvSeries.setItemViewCacheSize(20)
     }
 
     private fun calculateGridColumns(): Int {

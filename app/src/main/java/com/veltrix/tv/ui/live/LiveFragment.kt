@@ -91,6 +91,8 @@ class LiveFragment : Fragment(), MainActivity.DpadNavigable {
         val columns = calculateGridColumns()
         rvChannels.layoutManager = GridLayoutManager(requireContext(), columns)
         rvChannels.adapter = channelAdapter
+        rvChannels.setHasFixedSize(true)
+        rvChannels.setItemViewCacheSize(20)
     }
 
     private fun calculateGridColumns(): Int {
@@ -203,6 +205,7 @@ class LiveFragment : Fragment(), MainActivity.DpadNavigable {
                 putExtra(PlayerActivity.EXTRA_STREAM_IDS, streamIds)
                 putExtra(PlayerActivity.EXTRA_STREAM_NAMES, streamNames)
                 putExtra(PlayerActivity.EXTRA_CURRENT_INDEX, position)
+                putExtra(PlayerActivity.EXTRA_STREAM_ICON, stream.streamIcon)
             }
             startActivity(intent)
         } catch (e: Exception) {

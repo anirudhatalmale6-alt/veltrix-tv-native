@@ -104,8 +104,7 @@ public final class FavoriteDao_Impl implements FavoriteDao {
   }
 
   @Override
-  public Object insert(final FavoriteEntity favorite,
-      final Continuation<? super Unit> $completion) {
+  public Object insert(final FavoriteEntity favorite, final Continuation<? super Unit> arg1) {
     return CoroutinesRoom.execute(__db, true, new Callable<Unit>() {
       @Override
       @NonNull
@@ -119,12 +118,12 @@ public final class FavoriteDao_Impl implements FavoriteDao {
           __db.endTransaction();
         }
       }
-    }, $completion);
+    }, arg1);
   }
 
   @Override
   public Object delete(final int streamId, final String type,
-      final Continuation<? super Unit> $completion) {
+      final Continuation<? super Unit> arg2) {
     return CoroutinesRoom.execute(__db, true, new Callable<Unit>() {
       @Override
       @NonNull
@@ -151,11 +150,11 @@ public final class FavoriteDao_Impl implements FavoriteDao {
           __preparedStmtOfDelete.release(_stmt);
         }
       }
-    }, $completion);
+    }, arg2);
   }
 
   @Override
-  public Object deleteAll(final Continuation<? super Unit> $completion) {
+  public Object deleteAll(final Continuation<? super Unit> arg0) {
     return CoroutinesRoom.execute(__db, true, new Callable<Unit>() {
       @Override
       @NonNull
@@ -174,7 +173,7 @@ public final class FavoriteDao_Impl implements FavoriteDao {
           __preparedStmtOfDeleteAll.release(_stmt);
         }
       }
-    }, $completion);
+    }, arg0);
   }
 
   @Override
@@ -339,7 +338,7 @@ public final class FavoriteDao_Impl implements FavoriteDao {
 
   @Override
   public Object isFavorite(final int streamId, final String type,
-      final Continuation<? super Boolean> $completion) {
+      final Continuation<? super Boolean> arg2) {
     final String _sql = "SELECT EXISTS(SELECT 1 FROM favorites WHERE streamId = ? AND type = ?)";
     final RoomSQLiteQuery _statement = RoomSQLiteQuery.acquire(_sql, 2);
     int _argIndex = 1;
@@ -375,7 +374,7 @@ public final class FavoriteDao_Impl implements FavoriteDao {
           _statement.release();
         }
       }
-    }, $completion);
+    }, arg2);
   }
 
   @NonNull

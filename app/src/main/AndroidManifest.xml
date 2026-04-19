@@ -42,7 +42,8 @@
         <activity
             android:name=".ui.player.PlayerActivity"
             android:exported="false"
-            android:configChanges="orientation|screenSize|keyboardHidden"
+            android:configChanges="orientation|screenSize|keyboardHidden|smallestScreenSize|screenLayout"
+            android:supportsPictureInPicture="true"
             android:theme="@style/AppTheme.Player" />
 
         <activity

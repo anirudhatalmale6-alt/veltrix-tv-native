@@ -1,5 +1,9 @@
 [
     {
+        "merged": "com.veltrix.tv.app-merged_res-41:/layout_item_search_result.xml.flat",
+        "source": "com.veltrix.tv.app-main-42:/layout/item_search_result.xml"
+    },
+    {
         "merged": "/home/freelancer8/.gradle/daemon/8.4/com.veltrix.tv.app-merged_res-41:/layout_item_episode.xml.flat",
         "source": "/home/freelancer8/.gradle/daemon/8.4/com.veltrix.tv.app-main-42:/layout/item_episode.xml"
     },
@@ -12,12 +16,12 @@
         "source": "/home/freelancer8/.gradle/daemon/8.4/com.veltrix.tv.app-main-42:/drawable/edit_text_bg.xml"
     },
     {
-        "merged": "com.veltrix.tv.app-merged_res-41:/layout_activity_main.xml.flat",
-        "source": "com.veltrix.tv.app-main-42:/layout/activity_main.xml"
-    },
-    {
         "merged": "/home/freelancer8/.gradle/daemon/8.4/com.veltrix.tv.app-merged_res-41:/layout_fragment_series.xml.flat",
         "source": "/home/freelancer8/.gradle/daemon/8.4/com.veltrix.tv.app-main-42:/layout/fragment_series.xml"
+    },
+    {
+        "merged": "com.veltrix.tv.app-merged_res-41:/drawable_bg_tab_normal.xml.flat",
+        "source": "com.veltrix.tv.app-main-42:/drawable/bg_tab_normal.xml"
     },
     {
         "merged": "/home/freelancer8/.gradle/daemon/8.4/com.veltrix.tv.app-merged_res-41:/drawable_settings_button_bg.xml.flat",
@@ -28,12 +32,16 @@
         "source": "/home/freelancer8/.gradle/daemon/8.4/com.veltrix.tv.app-main-42:/layout/activity_series_detail.xml"
     },
     {
+        "merged": "/home/freelancer8/.gradle/daemon/8.4/com.veltrix.tv.app-merged_res-41:/layout_fragment_favorites.xml.flat",
+        "source": "/home/freelancer8/.gradle/daemon/8.4/com.veltrix.tv.app-main-42:/layout/fragment_favorites.xml"
+    },
+    {
         "merged": "/home/freelancer8/.gradle/daemon/8.4/com.veltrix.tv.app-merged_res-41:/layout_item_category.xml.flat",
         "source": "/home/freelancer8/.gradle/daemon/8.4/com.veltrix.tv.app-main-42:/layout/item_category.xml"
     },
     {
-        "merged": "/home/freelancer8/.gradle/daemon/8.4/com.veltrix.tv.app-merged_res-41:/layout_fragment_favorites.xml.flat",
-        "source": "/home/freelancer8/.gradle/daemon/8.4/com.veltrix.tv.app-main-42:/layout/fragment_favorites.xml"
+        "merged": "com.veltrix.tv.app-merged_res-41:/drawable_bg_search_input.xml.flat",
+        "source": "com.veltrix.tv.app-main-42:/drawable/bg_search_input.xml"
     },
     {
         "merged": "/home/freelancer8/.gradle/daemon/8.4/com.veltrix.tv.app-merged_res-41:/xml_network_security_config.xml.flat",
@@ -42,6 +50,10 @@
     {
         "merged": "/home/freelancer8/.gradle/daemon/8.4/com.veltrix.tv.app-merged_res-41:/drawable_overlay_gradient.xml.flat",
         "source": "/home/freelancer8/.gradle/daemon/8.4/com.veltrix.tv.app-main-42:/drawable/overlay_gradient.xml"
+    },
+    {
+        "merged": "com.veltrix.tv.app-merged_res-41:/layout_item_history.xml.flat",
+        "source": "com.veltrix.tv.app-main-42:/layout/item_history.xml"
     },
     {
         "merged": "/home/freelancer8/.gradle/daemon/8.4/com.veltrix.tv.app-merged_res-41:/drawable_sidebar_indicator.xml.flat",
@@ -56,6 +68,18 @@
         "source": "/home/freelancer8/.gradle/daemon/8.4/com.veltrix.tv.app-main-42:/drawable/card_bg.xml"
     },
     {
+        "merged": "com.veltrix.tv.app-merged_res-41:/layout_activity_player.xml.flat",
+        "source": "com.veltrix.tv.app-main-42:/layout/activity_player.xml"
+    },
+    {
+        "merged": "com.veltrix.tv.app-merged_res-41:/drawable_bg_list_item.xml.flat",
+        "source": "com.veltrix.tv.app-main-42:/drawable/bg_list_item.xml"
+    },
+    {
+        "merged": "com.veltrix.tv.app-merged_res-41:/layout_fragment_history.xml.flat",
+        "source": "com.veltrix.tv.app-main-42:/layout/fragment_history.xml"
+    },
+    {
         "merged": "/home/freelancer8/.gradle/daemon/8.4/com.veltrix.tv.app-merged_res-41:/layout_activity_login.xml.flat",
         "source": "/home/freelancer8/.gradle/daemon/8.4/com.veltrix.tv.app-main-42:/layout/activity_login.xml"
     },
@@ -64,12 +88,12 @@
         "source": "/home/freelancer8/.gradle/daemon/8.4/com.veltrix.tv.app-main-42:/layout/item_poster.xml"
     },
     {
-        "merged": "/home/freelancer8/.gradle/daemon/8.4/com.veltrix.tv.app-merged_res-41:/layout_fragment_settings.xml.flat",
-        "source": "/home/freelancer8/.gradle/daemon/8.4/com.veltrix.tv.app-main-42:/layout/fragment_settings.xml"
-    },
-    {
         "merged": "/home/freelancer8/.gradle/daemon/8.4/com.veltrix.tv.app-merged_res-41:/layout_activity_main.xml.flat",
         "source": "/home/freelancer8/.gradle/daemon/8.4/com.veltrix.tv.app-main-42:/layout/activity_main.xml"
+    },
+    {
+        "merged": "/home/freelancer8/.gradle/daemon/8.4/com.veltrix.tv.app-merged_res-41:/layout_fragment_settings.xml.flat",
+        "source": "/home/freelancer8/.gradle/daemon/8.4/com.veltrix.tv.app-main-42:/layout/fragment_settings.xml"
     },
     {
         "merged": "/home/freelancer8/.gradle/daemon/8.4/com.veltrix.tv.app-merged_res-41:/layout_item_sidebar.xml.flat",
@@ -88,6 +112,10 @@
         "source": "/home/freelancer8/.gradle/daemon/8.4/com.veltrix.tv.app-main-42:/layout/fragment_vod.xml"
     },
     {
+        "merged": "com.veltrix.tv.app-merged_res-41:/drawable_bg_tab_selected.xml.flat",
+        "source": "com.veltrix.tv.app-main-42:/drawable/bg_tab_selected.xml"
+    },
+    {
         "merged": "/home/freelancer8/.gradle/daemon/8.4/com.veltrix.tv.app-merged_res-41:/drawable_placeholder_image.xml.flat",
         "source": "/home/freelancer8/.gradle/daemon/8.4/com.veltrix.tv.app-main-42:/drawable/placeholder_image.xml"
     },
@@ -100,12 +128,20 @@
         "source": "/home/freelancer8/.gradle/daemon/8.4/com.veltrix.tv.app-main-42:/drawable/poster_gradient.xml"
     },
     {
+        "merged": "com.veltrix.tv.app-merged_res-41:/layout_fragment_search.xml.flat",
+        "source": "com.veltrix.tv.app-main-42:/layout/fragment_search.xml"
+    },
+    {
         "merged": "/home/freelancer8/.gradle/daemon/8.4/com.veltrix.tv.app-merged_res-41:/layout_item_season.xml.flat",
         "source": "/home/freelancer8/.gradle/daemon/8.4/com.veltrix.tv.app-main-42:/layout/item_season.xml"
     },
     {
         "merged": "/home/freelancer8/.gradle/daemon/8.4/com.veltrix.tv.app-merged_res-41:/layout_fragment_sidebar.xml.flat",
         "source": "/home/freelancer8/.gradle/daemon/8.4/com.veltrix.tv.app-main-42:/layout/fragment_sidebar.xml"
+    },
+    {
+        "merged": "com.veltrix.tv.app-merged_res-41:/layout_item_episode.xml.flat",
+        "source": "com.veltrix.tv.app-main-42:/layout/item_episode.xml"
     },
     {
         "merged": "/home/freelancer8/.gradle/daemon/8.4/com.veltrix.tv.app-merged_res-41:/drawable_category_item_bg.xml.flat",

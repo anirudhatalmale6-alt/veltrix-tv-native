@@ -89,6 +89,8 @@ class VodFragment : Fragment(), MainActivity.DpadNavigable {
                         putExtra(PlayerActivity.EXTRA_CHANNEL_NAME, movie.name)
                         putExtra(PlayerActivity.EXTRA_CATEGORY_NAME, "Movies")
                         putExtra(PlayerActivity.EXTRA_STREAM_TYPE, "vod")
+                        putExtra(PlayerActivity.EXTRA_STREAM_ICON, movie.streamIcon)
+                        putExtra(PlayerActivity.EXTRA_CONTAINER_EXT, movie.containerExtension)
                     }
                     startActivity(intent)
                 } catch (e: Exception) {
@@ -102,6 +104,8 @@ class VodFragment : Fragment(), MainActivity.DpadNavigable {
         val columns = calculateGridColumns()
         rvMovies.layoutManager = GridLayoutManager(requireContext(), columns)
         rvMovies.adapter = vodAdapter
+        rvMovies.setHasFixedSize(true)
+        rvMovies.setItemViewCacheSize(20)
     }
 
     private fun calculateGridColumns(): Int {

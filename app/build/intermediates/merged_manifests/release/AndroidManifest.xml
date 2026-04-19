@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.veltrix.tv"
-    android:versionCode="1"
-    android:versionName="1.0.0" >
+    android:versionCode="5"
+    android:versionName="1.0.5" >
 
     <uses-sdk
         android:minSdkVersion="21"
@@ -53,8 +53,9 @@
             android:exported="false" />
         <activity
             android:name="com.veltrix.tv.ui.player.PlayerActivity"
-            android:configChanges="orientation|screenSize|keyboardHidden"
+            android:configChanges="orientation|screenSize|keyboardHidden|smallestScreenSize|screenLayout"
             android:exported="false"
+            android:supportsPictureInPicture="true"
             android:theme="@style/AppTheme.Player" />
         <activity
             android:name="com.veltrix.tv.ui.series.SeriesDetailActivity"

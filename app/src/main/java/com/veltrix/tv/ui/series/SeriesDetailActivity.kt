@@ -16,6 +16,8 @@ import com.veltrix.tv.data.models.Episode
 import com.veltrix.tv.data.models.SeriesInfo
 import com.veltrix.tv.ui.main.MainActivity
 import com.veltrix.tv.ui.player.PlayerActivity
+import com.veltrix.tv.data.local.AppDatabase
+import com.veltrix.tv.data.local.WatchHistoryEntity
 import com.veltrix.tv.util.FocusHighlightHelper
 import com.veltrix.tv.util.gone
 import com.veltrix.tv.util.loadImage
@@ -25,6 +27,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import android.widget.ProgressBar as AndroidProgressBar
 
 class SeriesDetailActivity : AppCompatActivity() {
 
@@ -115,8 +118,16 @@ class SeriesDetailActivity : AppCompatActivity() {
 
     private fun showEpisodes(seasonKey: String) {
         val episodes = seriesInfo?.episodes?.get(seasonKey) ?: emptyList()
-        rvEpisodes.adapter = EpisodeAdapter(episodes) { episode ->
-            playEpisode(episode)
+        val seriesId = intent.getIntExtra(EXTRA_SERIES_ID, 0)
+        val dao = AppDatabase.getInstance(this).watchHistoryDao()
+
+        lifecycleScope.launch {
+            val historyList = withContext(Dispatchers.IO) {
+                dao.getSeriesHistory(seriesId)
+            }
+            rvEpisodes.adapter = EpisodeAdapter(episodes, historyList, seasonKey) { episode ->
+                playEpisode(episode)
+            }
         }
     }
 
@@ -124,14 +135,21 @@ class SeriesDetailActivity : AppCompatActivity() {
         val prefs = MainActivity.prefsInstance
         val ext = episode.containerExtension ?: "mp4"
         val streamUrl = "${prefs.getBaseUrl()}/series/${prefs.username}/${prefs.password}/${episode.id}.$ext"
+        val seriesId = intent.getIntExtra(EXTRA_SERIES_ID, 0)
 
-        val intent = Intent(this, PlayerActivity::class.java).apply {
+        val playerIntent = Intent(this, PlayerActivity::class.java).apply {
             putExtra(PlayerActivity.EXTRA_STREAM_URL, streamUrl)
             putExtra(PlayerActivity.EXTRA_CHANNEL_NAME, episode.title ?: "Episode ${episode.episodeNum}")
             putExtra(PlayerActivity.EXTRA_CATEGORY_NAME, tvTitle.text.toString())
             putExtra(PlayerActivity.EXTRA_STREAM_TYPE, "series")
+            putExtra(PlayerActivity.EXTRA_SERIES_ID, seriesId)
+            putExtra(PlayerActivity.EXTRA_SEASON_NUMBER, currentSeasonKey)
+            putExtra(PlayerActivity.EXTRA_EPISODE_NUMBER, episode.episodeNum ?: 0)
+            putExtra(PlayerActivity.EXTRA_EPISODE_TITLE, episode.title)
+            putExtra(PlayerActivity.EXTRA_CONTAINER_EXT, ext)
+            putExtra(PlayerActivity.EXTRA_STREAM_ICON, intent.getStringExtra(EXTRA_SERIES_COVER))
         }
-        startActivity(intent)
+        startActivity(playerIntent)
     }
 
     // Inner adapters for seasons and episodes
@@ -201,6 +219,8 @@ class SeriesDetailActivity : AppCompatActivity() {
 
     inner class EpisodeAdapter(
         private val episodes: List<Episode>,
+        private val historyList: List<WatchHistoryEntity>,
+        private val seasonKey: String,
         private val onEpisodeClick: (Episode) -> Unit
     ) : RecyclerView.Adapter<EpisodeAdapter.ViewHolder>() {
 
@@ -208,6 +228,7 @@ class SeriesDetailActivity : AppCompatActivity() {
             val tvTitle: TextView = itemView.findViewById(R.id.tvEpisodeTitle)
             val tvPlot: TextView = itemView.findViewById(R.id.tvEpisodePlot)
             val tvDuration: TextView = itemView.findViewById(R.id.tvEpisodeDuration)
+            val progressEpisode: AndroidProgressBar = itemView.findViewById(R.id.progressEpisode)
 
             init {
                 FocusHighlightHelper.setupFocusHighlight(itemView)
@@ -240,6 +261,18 @@ class SeriesDetailActivity : AppCompatActivity() {
 
             if (holder.tvDuration.text.isBlank()) holder.tvDuration.gone()
             else holder.tvDuration.visible()
+
+            // Show watch progress
+            val history = historyList.find { h ->
+                h.seasonNumber == seasonKey && h.episodeNumber == epNum
+            }
+            if (history != null && history.durationMs > 0 && history.positionMs > 0) {
+                val percent = ((history.positionMs.toFloat() / history.durationMs) * 100).toInt()
+                holder.progressEpisode.progress = percent
+                holder.progressEpisode.visible()
+            } else {
+                holder.progressEpisode.gone()
+            }
         }
 
         override fun getItemCount(): Int = episodes.size

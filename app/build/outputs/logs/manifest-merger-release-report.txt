@@ -1,9 +1,9 @@
 -- Merging decision tree log ---
 manifest
-ADDED from /var/lib/freelancer/projects/40373506/veltrix-tv-native/app/src/main/AndroidManifest.xml:2:1-55:12
-INJECTED from /var/lib/freelancer/projects/40373506/veltrix-tv-native/app/src/main/AndroidManifest.xml:2:1-55:12
-INJECTED from /var/lib/freelancer/projects/40373506/veltrix-tv-native/app/src/main/AndroidManifest.xml:2:1-55:12
-INJECTED from /var/lib/freelancer/projects/40373506/veltrix-tv-native/app/src/main/AndroidManifest.xml:2:1-55:12
+ADDED from /var/lib/freelancer/projects/40373506/veltrix-tv-native/app/src/main/AndroidManifest.xml:2:1-56:12
+INJECTED from /var/lib/freelancer/projects/40373506/veltrix-tv-native/app/src/main/AndroidManifest.xml:2:1-56:12
+INJECTED from /var/lib/freelancer/projects/40373506/veltrix-tv-native/app/src/main/AndroidManifest.xml:2:1-56:12
+INJECTED from /var/lib/freelancer/projects/40373506/veltrix-tv-native/app/src/main/AndroidManifest.xml:2:1-56:12
 MERGED from [androidx.databinding:viewbinding:8.2.0] /home/freelancer8/.gradle/caches/transforms-3/32ec76e94b0efb60a3284a5e66e5d3d0/transformed/viewbinding-8.2.0/AndroidManifest.xml:2:1-7:12
 MERGED from [androidx.constraintlayout:constraintlayout:2.1.4] /home/freelancer8/.gradle/caches/transforms-3/b02b7b32751f088c5443f60cdd6adb16/transformed/constraintlayout-2.1.4/AndroidManifest.xml:2:1-11:12
 MERGED from [io.coil-kt:coil:2.5.0] /home/freelancer8/.gradle/caches/transforms-3/0d52bb33b87ceeb11e9ef1ccd240e5bf/transformed/coil-2.5.0/AndroidManifest.xml:2:1-7:12
@@ -94,8 +94,8 @@ ADDED from /var/lib/freelancer/projects/40373506/veltrix-tv-native/app/src/main/
 	android:name
 		ADDED from /var/lib/freelancer/projects/40373506/veltrix-tv-native/app/src/main/AndroidManifest.xml:12:9-52
 application
-ADDED from /var/lib/freelancer/projects/40373506/veltrix-tv-native/app/src/main/AndroidManifest.xml:15:5-53:19
-INJECTED from /var/lib/freelancer/projects/40373506/veltrix-tv-native/app/src/main/AndroidManifest.xml:15:5-53:19
+ADDED from /var/lib/freelancer/projects/40373506/veltrix-tv-native/app/src/main/AndroidManifest.xml:15:5-54:19
+INJECTED from /var/lib/freelancer/projects/40373506/veltrix-tv-native/app/src/main/AndroidManifest.xml:15:5-54:19
 MERGED from [androidx.constraintlayout:constraintlayout:2.1.4] /home/freelancer8/.gradle/caches/transforms-3/b02b7b32751f088c5443f60cdd6adb16/transformed/constraintlayout-2.1.4/AndroidManifest.xml:9:5-20
 MERGED from [androidx.constraintlayout:constraintlayout:2.1.4] /home/freelancer8/.gradle/caches/transforms-3/b02b7b32751f088c5443f60cdd6adb16/transformed/constraintlayout-2.1.4/AndroidManifest.xml:9:5-20
 MERGED from [androidx.emoji2:emoji2:1.2.0] /home/freelancer8/.gradle/caches/transforms-3/494960ca87c145cbc6d98a8ffaca2bba/transformed/emoji2-1.2.0/AndroidManifest.xml:23:5-33:19
@@ -165,23 +165,25 @@ ADDED from /var/lib/freelancer/projects/40373506/veltrix-tv-native/app/src/main/
 	android:name
 		ADDED from /var/lib/freelancer/projects/40373506/veltrix-tv-native/app/src/main/AndroidManifest.xml:38:13-49
 activity#com.veltrix.tv.ui.player.PlayerActivity
-ADDED from /var/lib/freelancer/projects/40373506/veltrix-tv-native/app/src/main/AndroidManifest.xml:42:9-46:54
+ADDED from /var/lib/freelancer/projects/40373506/veltrix-tv-native/app/src/main/AndroidManifest.xml:42:9-47:54
 	android:exported
 		ADDED from /var/lib/freelancer/projects/40373506/veltrix-tv-native/app/src/main/AndroidManifest.xml:44:13-37
+	android:supportsPictureInPicture
+		ADDED from /var/lib/freelancer/projects/40373506/veltrix-tv-native/app/src/main/AndroidManifest.xml:46:13-52
 	android:configChanges
-		ADDED from /var/lib/freelancer/projects/40373506/veltrix-tv-native/app/src/main/AndroidManifest.xml:45:13-74
+		ADDED from /var/lib/freelancer/projects/40373506/veltrix-tv-native/app/src/main/AndroidManifest.xml:45:13-106
 	android:theme
-		ADDED from /var/lib/freelancer/projects/40373506/veltrix-tv-native/app/src/main/AndroidManifest.xml:46:13-51
+		ADDED from /var/lib/freelancer/projects/40373506/veltrix-tv-native/app/src/main/AndroidManifest.xml:47:13-51
 	android:name
 		ADDED from /var/lib/freelancer/projects/40373506/veltrix-tv-native/app/src/main/AndroidManifest.xml:43:13-53
 activity#com.veltrix.tv.ui.series.SeriesDetailActivity
-ADDED from /var/lib/freelancer/projects/40373506/veltrix-tv-native/app/src/main/AndroidManifest.xml:48:9-51:77
+ADDED from /var/lib/freelancer/projects/40373506/veltrix-tv-native/app/src/main/AndroidManifest.xml:49:9-52:77
 	android:exported
-		ADDED from /var/lib/freelancer/projects/40373506/veltrix-tv-native/app/src/main/AndroidManifest.xml:50:13-37
+		ADDED from /var/lib/freelancer/projects/40373506/veltrix-tv-native/app/src/main/AndroidManifest.xml:51:13-37
 	android:configChanges
-		ADDED from /var/lib/freelancer/projects/40373506/veltrix-tv-native/app/src/main/AndroidManifest.xml:51:13-74
+		ADDED from /var/lib/freelancer/projects/40373506/veltrix-tv-native/app/src/main/AndroidManifest.xml:52:13-74
 	android:name
-		ADDED from /var/lib/freelancer/projects/40373506/veltrix-tv-native/app/src/main/AndroidManifest.xml:49:13-59
+		ADDED from /var/lib/freelancer/projects/40373506/veltrix-tv-native/app/src/main/AndroidManifest.xml:50:13-59
 uses-sdk
 INJECTED from /var/lib/freelancer/projects/40373506/veltrix-tv-native/app/src/main/AndroidManifest.xml reason: use-sdk injection requested
 INJECTED from /var/lib/freelancer/projects/40373506/veltrix-tv-native/app/src/main/AndroidManifest.xml

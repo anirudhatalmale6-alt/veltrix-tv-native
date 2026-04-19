@@ -37,4 +37,15 @@
         android:textSize="11sp"
         android:layout_marginTop="2dp" />
 
+    <ProgressBar
+        android:id="@+id/progressEpisode"
+        style="@android:style/Widget.ProgressBar.Horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="3dp"
+        android:layout_marginTop="6dp"
+        android:max="100"
+        android:progressTint="@color/red"
+        android:progressBackgroundTint="@color/surface_light"
+        android:visibility="gone" />
+
 </LinearLayout>
