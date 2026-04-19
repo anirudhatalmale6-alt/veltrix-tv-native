@@ -13,12 +13,16 @@
         android:required="false" />
 
     <application
+        android:name=".VeltrixApp"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
-        android:banner="@mipmap/ic_launcher">
+        android:banner="@mipmap/ic_launcher"
+        android:networkSecurityConfig="@xml/network_security_config"
+        android:usesCleartextTraffic="true"
+        android:hardwareAccelerated="true">
 
         <activity
             android:name=".ui.login.LoginActivity"
@@ -32,7 +36,8 @@
 
         <activity
             android:name=".ui.main.MainActivity"
-            android:exported="false" />
+            android:exported="false"
+            android:configChanges="orientation|screenSize|keyboardHidden" />
 
         <activity
             android:name=".ui.player.PlayerActivity"
@@ -42,7 +47,8 @@
 
         <activity
             android:name=".ui.series.SeriesDetailActivity"
-            android:exported="false" />
+            android:exported="false"
+            android:configChanges="orientation|screenSize|keyboardHidden" />
 
     </application>
 

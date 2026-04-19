@@ -5,7 +5,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
-import android.widget.LinearLayout;
+import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.viewbinding.ViewBinding;
@@ -17,7 +17,7 @@ import java.lang.String;
 
 public final class ActivityMainBinding implements ViewBinding {
   @NonNull
-  private final LinearLayout rootView;
+  private final FrameLayout rootView;
 
   @NonNull
   public final FrameLayout contentContainer;
@@ -25,16 +25,20 @@ public final class ActivityMainBinding implements ViewBinding {
   @NonNull
   public final FrameLayout sidebarContainer;
 
-  private ActivityMainBinding(@NonNull LinearLayout rootView, @NonNull FrameLayout contentContainer,
-      @NonNull FrameLayout sidebarContainer) {
+  @NonNull
+  public final TextView tvDebug;
+
+  private ActivityMainBinding(@NonNull FrameLayout rootView, @NonNull FrameLayout contentContainer,
+      @NonNull FrameLayout sidebarContainer, @NonNull TextView tvDebug) {
     this.rootView = rootView;
     this.contentContainer = contentContainer;
     this.sidebarContainer = sidebarContainer;
+    this.tvDebug = tvDebug;
   }
 
   @Override
   @NonNull
-  public LinearLayout getRoot() {
+  public FrameLayout getRoot() {
     return rootView;
   }
 
@@ -71,7 +75,14 @@ public final class ActivityMainBinding implements ViewBinding {
         break missingId;
       }
 
-      return new ActivityMainBinding((LinearLayout) rootView, contentContainer, sidebarContainer);
+      id = R.id.tvDebug;
+      TextView tvDebug = ViewBindings.findChildViewById(rootView, id);
+      if (tvDebug == null) {
+        break missingId;
+      }
+
+      return new ActivityMainBinding((FrameLayout) rootView, contentContainer, sidebarContainer,
+          tvDebug);
     }
     String missingId = rootView.getResources().getResourceName(id);
     throw new NullPointerException("Missing required view with ID: ".concat(missingId));

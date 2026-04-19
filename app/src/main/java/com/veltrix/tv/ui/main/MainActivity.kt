@@ -3,6 +3,7 @@ package com.veltrix.tv.ui.main
 import android.os.Bundle
 import android.view.KeyEvent
 import android.widget.FrameLayout
+import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
@@ -25,7 +26,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var prefs: PrefsManager
     private lateinit var contentContainer: FrameLayout
     private lateinit var sidebarContainer: FrameLayout
+    private lateinit var tvDebug: TextView
     private var currentContentFragment: Fragment? = null
+    private var exitConfirmed = false
 
     companion object {
         lateinit var apiService: XtreamApiService
@@ -43,9 +46,18 @@ class MainActivity : AppCompatActivity() {
 
         sidebarContainer = findViewById(R.id.sidebarContainer)
         contentContainer = findViewById(R.id.contentContainer)
+        tvDebug = findViewById(R.id.tvDebug)
 
         initApi()
         setupSidebar()
+        debug("Ready. Use remote to navigate.")
+    }
+
+    private fun debug(msg: String) {
+        try {
+            tvDebug.text = msg
+            android.util.Log.d("VeltrixTV", msg)
+        } catch (_: Exception) {}
     }
 
     private fun initApi() {
@@ -66,55 +78,70 @@ class MainActivity : AppCompatActivity() {
     private fun setupSidebar() {
         sidebarFragment = SidebarFragment()
         sidebarFragment.onSectionSelected = { item, _ ->
+            debug("Sidebar: ${item.title}")
             switchContent(item.id)
-            // After selecting, move focus to content
-            contentContainer.post {
-                focusFirstInContent()
-            }
         }
 
         supportFragmentManager.beginTransaction()
             .replace(R.id.sidebarContainer, sidebarFragment)
-            .commit()
+            .commitAllowingStateLoss()
 
         switchContent(SidebarFragment.ID_LIVE)
     }
 
     private fun switchContent(sectionId: Int) {
-        val fragment: Fragment = when (sectionId) {
-            SidebarFragment.ID_LIVE -> LiveFragment()
-            SidebarFragment.ID_MOVIES -> VodFragment()
-            SidebarFragment.ID_SERIES -> SeriesFragment()
-            SidebarFragment.ID_FAVORITES -> FavoritesFragment()
-            SidebarFragment.ID_SETTINGS -> SettingsFragment()
-            else -> LiveFragment()
-        }
+        try {
+            val fragment: Fragment = when (sectionId) {
+                SidebarFragment.ID_LIVE -> LiveFragment()
+                SidebarFragment.ID_MOVIES -> VodFragment()
+                SidebarFragment.ID_SERIES -> SeriesFragment()
+                SidebarFragment.ID_FAVORITES -> FavoritesFragment()
+                SidebarFragment.ID_SETTINGS -> SettingsFragment()
+                else -> LiveFragment()
+            }
 
-        currentContentFragment = fragment
-        supportFragmentManager.beginTransaction()
-            .replace(R.id.contentContainer, fragment)
-            .commit()
+            currentContentFragment = fragment
+            supportFragmentManager.beginTransaction()
+                .replace(R.id.contentContainer, fragment)
+                .commitAllowingStateLoss()
+        } catch (e: Exception) {
+            debug("switchContent error: ${e.message}")
+        }
     }
 
     private fun isFocusInSidebar(): Boolean {
         val focused = currentFocus ?: return false
-        return sidebarContainer.isAncestorOf(focused)
+        return isDescendantOf(focused, sidebarContainer)
     }
 
     private fun isFocusInContent(): Boolean {
         val focused = currentFocus ?: return false
-        return contentContainer.isAncestorOf(focused)
+        return isDescendantOf(focused, contentContainer)
+    }
+
+    private fun isDescendantOf(child: android.view.View, parent: android.view.View): Boolean {
+        var current: android.view.ViewParent? = child.parent
+        while (current != null) {
+            if (current === parent) return true
+            current = current.parent
+        }
+        return false
     }
 
     private fun focusFirstInContent() {
-        // Find the first focusable view in the content area
-        val firstFocusable = contentContainer.findFocus()
-            ?: findFirstFocusable(contentContainer)
-        firstFocusable?.requestFocus()
+        contentContainer.post {
+            try {
+                val firstFocusable = contentContainer.findFocus()
+                    ?: findFirstFocusable(contentContainer)
+                firstFocusable?.requestFocus()
+            } catch (e: Exception) {
+                debug("focusFirst error: ${e.message}")
+            }
+        }
     }
 
     private fun findFirstFocusable(view: android.view.View): android.view.View? {
-        if (view.isFocusable) return view
+        if (view.isFocusable && view !is FrameLayout) return view
         if (view is android.view.ViewGroup) {
             for (i in 0 until view.childCount) {
                 val found = findFirstFocusable(view.getChildAt(i))
@@ -124,62 +151,96 @@ class MainActivity : AppCompatActivity() {
         return null
     }
 
+    override fun dispatchKeyEvent(event: KeyEvent): Boolean {
+        // Log all key events for debugging
+        if (event.action == KeyEvent.ACTION_DOWN) {
+            val keyName = KeyEvent.keyCodeToString(event.keyCode)
+            val focusArea = when {
+                isFocusInSidebar() -> "sidebar"
+                isFocusInContent() -> "content"
+                else -> "unknown"
+            }
+            debug("Key: $keyName | Focus: $focusArea")
+        }
+        return super.dispatchKeyEvent(event)
+    }
+
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
-        when (keyCode) {
-            KeyEvent.KEYCODE_DPAD_RIGHT -> {
-                if (isFocusInSidebar()) {
-                    // Move from sidebar to content area
-                    focusFirstInContent()
-                    return true
+        try {
+            when (keyCode) {
+                // SELECT/OK buttons - let them pass through to click handlers
+                KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER,
+                KeyEvent.KEYCODE_NUMPAD_ENTER, KeyEvent.KEYCODE_BUTTON_A -> {
+                    return super.onKeyDown(keyCode, event)
                 }
-            }
-            KeyEvent.KEYCODE_DPAD_LEFT -> {
-                if (isFocusInContent()) {
-                    // Check if the content fragment can handle LEFT (e.g., categories list)
-                    val frag = currentContentFragment
-                    if (frag is DpadNavigable && frag.canGoLeft()) {
-                        return false // Let the fragment handle it
+
+                KeyEvent.KEYCODE_DPAD_RIGHT -> {
+                    if (isFocusInSidebar()) {
+                        focusFirstInContent()
+                        return true
                     }
-                    // Move from content back to sidebar
-                    sidebarFragment.focusCurrentItem()
+                }
+                KeyEvent.KEYCODE_DPAD_LEFT -> {
+                    if (isFocusInContent()) {
+                        val frag = currentContentFragment
+                        if (frag is DpadNavigable && frag.canGoLeft()) {
+                            return super.onKeyDown(keyCode, event)
+                        }
+                        sidebarFragment.focusCurrentItem()
+                        return true
+                    }
+                }
+                KeyEvent.KEYCODE_BACK -> {
+                    if (isFocusInContent()) {
+                        sidebarFragment.focusCurrentItem()
+                        return true
+                    }
+                    showExitDialog()
                     return true
                 }
             }
-            KeyEvent.KEYCODE_BACK -> {
-                if (isFocusInContent()) {
-                    // BACK from content -> sidebar
-                    sidebarFragment.focusCurrentItem()
-                    return true
-                }
-                // BACK from sidebar -> exit dialog
-                showExitDialog()
-                return true
-            }
+        } catch (e: Exception) {
+            debug("onKeyDown error: ${e.message}")
         }
 
         return super.onKeyDown(keyCode, event)
     }
 
-    private fun showExitDialog() {
-        AlertDialog.Builder(this, R.style.AppTheme)
-            .setTitle(getString(R.string.exit_confirm))
-            .setPositiveButton(R.string.yes) { _, _ -> finish() }
-            .setNegativeButton(R.string.no, null)
-            .show()
+    @Deprecated("Deprecated in Java")
+    override fun onBackPressed() {
+        // Safety net: prevent accidental back press from closing the app
+        if (isFocusInContent()) {
+            sidebarFragment.focusCurrentItem()
+            return
+        }
+        showExitDialog()
     }
 
-    private fun android.view.View.isAncestorOf(view: android.view.View): Boolean {
-        var current: android.view.ViewParent? = view.parent
-        while (current != null) {
-            if (current == this) return true
-            current = current.parent
+    override fun finish() {
+        if (!exitConfirmed) {
+            debug("finish() blocked - not confirmed")
+            return
         }
-        return false
+        super.finish()
+    }
+
+    private fun showExitDialog() {
+        try {
+            AlertDialog.Builder(this)
+                .setTitle(getString(R.string.exit_confirm))
+                .setPositiveButton(R.string.yes) { _, _ ->
+                    exitConfirmed = true
+                    finish()
+                }
+                .setNegativeButton(R.string.no, null)
+                .show()
+        } catch (e: Exception) {
+            debug("Dialog error: ${e.message}")
+        }
     }
 
     /** Interface for fragments that handle D-pad navigation */
     interface DpadNavigable {
-        /** Returns true if this fragment has a sub-area to navigate LEFT to (e.g., categories) */
         fun canGoLeft(): Boolean
     }
 }

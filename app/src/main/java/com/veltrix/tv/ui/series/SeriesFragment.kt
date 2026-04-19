@@ -78,12 +78,16 @@ class SeriesFragment : Fragment(), MainActivity.DpadNavigable {
 
         seriesAdapter = SeriesAdapter(
             onSeriesClick = { series ->
-                val intent = Intent(requireContext(), SeriesDetailActivity::class.java).apply {
-                    putExtra(SeriesDetailActivity.EXTRA_SERIES_ID, series.seriesId)
-                    putExtra(SeriesDetailActivity.EXTRA_SERIES_NAME, series.name)
-                    putExtra(SeriesDetailActivity.EXTRA_SERIES_COVER, series.cover)
+                try {
+                    val intent = Intent(requireContext(), SeriesDetailActivity::class.java).apply {
+                        putExtra(SeriesDetailActivity.EXTRA_SERIES_ID, series.seriesId)
+                        putExtra(SeriesDetailActivity.EXTRA_SERIES_NAME, series.name)
+                        putExtra(SeriesDetailActivity.EXTRA_SERIES_COVER, series.cover)
+                    }
+                    startActivity(intent)
+                } catch (e: Exception) {
+                    android.util.Log.e("VeltrixTV", "openSeries error", e)
                 }
-                startActivity(intent)
             },
             onSeriesLongClick = { series ->
                 toggleFavorite(series)

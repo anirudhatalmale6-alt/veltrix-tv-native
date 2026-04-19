@@ -81,12 +81,19 @@ class PlayerActivity : AppCompatActivity() {
         tvChannelName.text = channelName
         tvChannelCategory.text = categoryName
 
+        if (streamUrl.isEmpty()) {
+            tvError.visible()
+            tvError.text = "No stream URL provided"
+            return
+        }
+
         initPlayer()
         playStream(streamUrl)
         showOverlay()
     }
 
     private fun initPlayer() {
+        try {
         player = ExoPlayer.Builder(this).build().also {
             playerView.player = it
 
@@ -119,6 +126,11 @@ class PlayerActivity : AppCompatActivity() {
                     tvError.text = getString(R.string.player_error)
                 }
             })
+        }
+        } catch (e: Exception) {
+            android.util.Log.e("VeltrixTV", "initPlayer error", e)
+            tvError.visible()
+            tvError.text = "Player error: ${e.message}"
         }
     }
 

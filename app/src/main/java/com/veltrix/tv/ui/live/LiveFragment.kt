@@ -188,21 +188,26 @@ class LiveFragment : Fragment(), MainActivity.DpadNavigable {
     }
 
     private fun openPlayer(stream: LiveStream, position: Int) {
-        val prefs = MainActivity.prefsInstance
-        val streamUrl = "${prefs.getBaseUrl()}/live/${prefs.username}/${prefs.password}/${stream.streamId}.ts"
+        try {
+            val prefs = MainActivity.prefsInstance
+            val streamUrl = "${prefs.getBaseUrl()}/live/${prefs.username}/${prefs.password}/${stream.streamId}.ts"
 
-        val streamIds = allStreams.map { it.streamId }.toIntArray()
-        val streamNames = allStreams.map { it.name }.toTypedArray()
+            val streamIds = allStreams.map { it.streamId }.toIntArray()
+            val streamNames = allStreams.map { it.name }.toTypedArray()
 
-        val intent = Intent(requireContext(), PlayerActivity::class.java).apply {
-            putExtra(PlayerActivity.EXTRA_STREAM_URL, streamUrl)
-            putExtra(PlayerActivity.EXTRA_CHANNEL_NAME, stream.name)
-            putExtra(PlayerActivity.EXTRA_CATEGORY_NAME, "Live TV")
-            putExtra(PlayerActivity.EXTRA_STREAM_TYPE, "live")
-            putExtra(PlayerActivity.EXTRA_STREAM_IDS, streamIds)
-            putExtra(PlayerActivity.EXTRA_STREAM_NAMES, streamNames)
-            putExtra(PlayerActivity.EXTRA_CURRENT_INDEX, position)
+            val intent = Intent(requireContext(), PlayerActivity::class.java).apply {
+                putExtra(PlayerActivity.EXTRA_STREAM_URL, streamUrl)
+                putExtra(PlayerActivity.EXTRA_CHANNEL_NAME, stream.name)
+                putExtra(PlayerActivity.EXTRA_CATEGORY_NAME, "Live TV")
+                putExtra(PlayerActivity.EXTRA_STREAM_TYPE, "live")
+                putExtra(PlayerActivity.EXTRA_STREAM_IDS, streamIds)
+                putExtra(PlayerActivity.EXTRA_STREAM_NAMES, streamNames)
+                putExtra(PlayerActivity.EXTRA_CURRENT_INDEX, position)
+            }
+            startActivity(intent)
+        } catch (e: Exception) {
+            android.util.Log.e("VeltrixTV", "openPlayer error", e)
+            requireContext().toast("Error opening player: ${e.message}")
         }
-        startActivity(intent)
     }
 }

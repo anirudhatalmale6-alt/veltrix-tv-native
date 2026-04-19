@@ -8,10 +8,6 @@
         "source": "/home/freelancer8/.gradle/daemon/8.4/com.veltrix.tv.app-main-42:/layout/fragment_series.xml"
     },
     {
-        "merged": "com.veltrix.tv.app-mergeReleaseResources-40:/layout/activity_series_detail.xml",
-        "source": "com.veltrix.tv.app-main-42:/layout/activity_series_detail.xml"
-    },
-    {
         "merged": "/home/freelancer8/.gradle/daemon/8.4/com.veltrix.tv.app-mergeReleaseResources-40:/layout/fragment_vod.xml",
         "source": "/home/freelancer8/.gradle/daemon/8.4/com.veltrix.tv.app-main-42:/layout/fragment_vod.xml"
     },
@@ -20,12 +16,12 @@
         "source": "/home/freelancer8/.gradle/daemon/8.4/com.veltrix.tv.app-main-42:/layout/fragment_favorites.xml"
     },
     {
-        "merged": "/home/freelancer8/.gradle/daemon/8.4/com.veltrix.tv.app-mergeReleaseResources-40:/layout/fragment_sidebar.xml",
-        "source": "/home/freelancer8/.gradle/daemon/8.4/com.veltrix.tv.app-main-42:/layout/fragment_sidebar.xml"
-    },
-    {
         "merged": "/home/freelancer8/.gradle/daemon/8.4/com.veltrix.tv.app-mergeReleaseResources-40:/layout/item_category.xml",
         "source": "/home/freelancer8/.gradle/daemon/8.4/com.veltrix.tv.app-main-42:/layout/item_category.xml"
+    },
+    {
+        "merged": "/home/freelancer8/.gradle/daemon/8.4/com.veltrix.tv.app-mergeReleaseResources-40:/layout/fragment_sidebar.xml",
+        "source": "/home/freelancer8/.gradle/daemon/8.4/com.veltrix.tv.app-main-42:/layout/fragment_sidebar.xml"
     },
     {
         "merged": "/home/freelancer8/.gradle/daemon/8.4/com.veltrix.tv.app-mergeReleaseResources-40:/layout/item_channel.xml",
@@ -42,6 +38,10 @@
     {
         "merged": "/home/freelancer8/.gradle/daemon/8.4/com.veltrix.tv.app-mergeReleaseResources-40:/layout/fragment_live.xml",
         "source": "/home/freelancer8/.gradle/daemon/8.4/com.veltrix.tv.app-main-42:/layout/fragment_live.xml"
+    },
+    {
+        "merged": "com.veltrix.tv.app-mergeReleaseResources-40:/layout/activity_main.xml",
+        "source": "com.veltrix.tv.app-main-42:/layout/activity_main.xml"
     },
     {
         "merged": "/home/freelancer8/.gradle/daemon/8.4/com.veltrix.tv.app-mergeReleaseResources-40:/layout/fragment_settings.xml",

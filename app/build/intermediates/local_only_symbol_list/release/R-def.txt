@@ -69,6 +69,7 @@ id sidebarContainer
 id tvCategoryName
 id tvChannelCategory
 id tvChannelName
+id tvDebug
 id tvEmpty
 id tvEpisodeDuration
 id tvEpisodePlot
@@ -152,3 +153,4 @@ style AppTheme.Player
 style LoginButton
 style LoginEditText
 style SidebarText
+xml network_security_config

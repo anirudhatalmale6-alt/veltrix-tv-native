@@ -79,17 +79,21 @@ class VodFragment : Fragment(), MainActivity.DpadNavigable {
 
         vodAdapter = VodAdapter(
             onMovieClick = { movie ->
-                val prefs = MainActivity.prefsInstance
-                val ext = movie.containerExtension ?: "mp4"
-                val streamUrl = "${prefs.getBaseUrl()}/movie/${prefs.username}/${prefs.password}/${movie.streamId}.$ext"
+                try {
+                    val prefs = MainActivity.prefsInstance
+                    val ext = movie.containerExtension ?: "mp4"
+                    val streamUrl = "${prefs.getBaseUrl()}/movie/${prefs.username}/${prefs.password}/${movie.streamId}.$ext"
 
-                val intent = Intent(requireContext(), PlayerActivity::class.java).apply {
-                    putExtra(PlayerActivity.EXTRA_STREAM_URL, streamUrl)
-                    putExtra(PlayerActivity.EXTRA_CHANNEL_NAME, movie.name)
-                    putExtra(PlayerActivity.EXTRA_CATEGORY_NAME, "Movies")
-                    putExtra(PlayerActivity.EXTRA_STREAM_TYPE, "vod")
+                    val intent = Intent(requireContext(), PlayerActivity::class.java).apply {
+                        putExtra(PlayerActivity.EXTRA_STREAM_URL, streamUrl)
+                        putExtra(PlayerActivity.EXTRA_CHANNEL_NAME, movie.name)
+                        putExtra(PlayerActivity.EXTRA_CATEGORY_NAME, "Movies")
+                        putExtra(PlayerActivity.EXTRA_STREAM_TYPE, "vod")
+                    }
+                    startActivity(intent)
+                } catch (e: Exception) {
+                    android.util.Log.e("VeltrixTV", "openMovie error", e)
                 }
-                startActivity(intent)
             },
             onMovieLongClick = { movie ->
                 toggleFavorite(movie)
