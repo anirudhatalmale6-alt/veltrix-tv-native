@@ -33,11 +33,10 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
-        android:background="#AA000000"
-        android:padding="8dp"
-        android:textColor="#FFFF00"
-        android:textSize="12sp"
-        android:maxLines="5"
-        android:text="Debug: ready" />
+        android:padding="4dp"
+        android:textColor="#00000000"
+        android:textSize="1sp"
+        android:maxLines="1"
+        android:visibility="gone" />
 
 </FrameLayout>

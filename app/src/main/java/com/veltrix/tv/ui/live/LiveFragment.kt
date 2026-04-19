@@ -14,6 +14,7 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.veltrix.tv.R
+import com.veltrix.tv.data.ChannelListHolder
 import com.veltrix.tv.data.models.Category
 import com.veltrix.tv.data.models.LiveStream
 import com.veltrix.tv.data.local.AppDatabase
@@ -194,16 +195,14 @@ class LiveFragment : Fragment(), MainActivity.DpadNavigable {
             val prefs = MainActivity.prefsInstance
             val streamUrl = "${prefs.getBaseUrl()}/live/${prefs.username}/${prefs.password}/${stream.streamId}.ts"
 
-            val streamIds = allStreams.map { it.streamId }.toIntArray()
-            val streamNames = allStreams.map { it.name }.toTypedArray()
+            // Store channel list in memory holder (avoids Binder transaction limit)
+            ChannelListHolder.set(allStreams)
 
             val intent = Intent(requireContext(), PlayerActivity::class.java).apply {
                 putExtra(PlayerActivity.EXTRA_STREAM_URL, streamUrl)
                 putExtra(PlayerActivity.EXTRA_CHANNEL_NAME, stream.name)
                 putExtra(PlayerActivity.EXTRA_CATEGORY_NAME, "Live TV")
                 putExtra(PlayerActivity.EXTRA_STREAM_TYPE, "live")
-                putExtra(PlayerActivity.EXTRA_STREAM_IDS, streamIds)
-                putExtra(PlayerActivity.EXTRA_STREAM_NAMES, streamNames)
                 putExtra(PlayerActivity.EXTRA_CURRENT_INDEX, position)
                 putExtra(PlayerActivity.EXTRA_STREAM_ICON, stream.streamIcon)
             }

@@ -27,6 +27,7 @@ import androidx.media3.common.TrackSelectionOverride
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.ui.PlayerView
 import com.veltrix.tv.R
+import com.veltrix.tv.data.ChannelListHolder
 import com.veltrix.tv.data.local.AppDatabase
 import com.veltrix.tv.data.local.WatchHistoryEntity
 import com.veltrix.tv.ui.main.MainActivity
@@ -43,8 +44,6 @@ class PlayerActivity : AppCompatActivity() {
         const val EXTRA_CHANNEL_NAME = "channel_name"
         const val EXTRA_CATEGORY_NAME = "category_name"
         const val EXTRA_STREAM_TYPE = "stream_type"
-        const val EXTRA_STREAM_IDS = "stream_ids"
-        const val EXTRA_STREAM_NAMES = "stream_names"
         const val EXTRA_CURRENT_INDEX = "current_index"
         const val EXTRA_RESUME_POSITION = "resume_position"
         const val EXTRA_STREAM_ICON = "stream_icon"
@@ -139,8 +138,9 @@ class PlayerActivity : AppCompatActivity() {
         channelName = intent.getStringExtra(EXTRA_CHANNEL_NAME) ?: ""
         categoryName = intent.getStringExtra(EXTRA_CATEGORY_NAME) ?: ""
         streamType = intent.getStringExtra(EXTRA_STREAM_TYPE) ?: "live"
-        streamIds = intent.getIntArrayExtra(EXTRA_STREAM_IDS)
-        streamNames = intent.getStringArrayExtra(EXTRA_STREAM_NAMES)
+        // Get channel list from memory holder (avoids Binder transaction limit)
+        streamIds = ChannelListHolder.streamIds.let { if (it.isEmpty()) null else it }
+        streamNames = ChannelListHolder.streamNames.let { if (it.isEmpty()) null else it }
         currentIndex = intent.getIntExtra(EXTRA_CURRENT_INDEX, 0)
         resumePosition = intent.getLongExtra(EXTRA_RESUME_POSITION, 0)
 

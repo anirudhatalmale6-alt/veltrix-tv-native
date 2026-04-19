@@ -104,7 +104,7 @@ class SettingsFragment : Fragment() {
     }
 
     private fun showLogoutDialog() {
-        AlertDialog.Builder(requireContext(), R.style.AppTheme)
+        AlertDialog.Builder(requireContext())
             .setTitle(getString(R.string.logout_confirm))
             .setPositiveButton(R.string.yes) { _, _ ->
                 performLogout()

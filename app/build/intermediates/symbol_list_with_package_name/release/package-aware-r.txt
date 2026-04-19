@@ -1134,6 +1134,7 @@ drawable ic_call_answer_video
 drawable ic_call_answer_video_low
 drawable ic_call_decline
 drawable ic_call_decline_low
+drawable logo_veltrix
 drawable notification_action_background
 drawable notification_bg
 drawable notification_bg_low
@@ -1705,6 +1706,7 @@ layout select_dialog_item_material
 layout select_dialog_multichoice_material
 layout select_dialog_singlechoice_material
 layout support_simple_spinner_dropdown_item
+mipmap ic_banner
 mipmap ic_launcher
 plurals exo_controls_fastforward_by_amount_description
 plurals exo_controls_rewind_by_amount_description

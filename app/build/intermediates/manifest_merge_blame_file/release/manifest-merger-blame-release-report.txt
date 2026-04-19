@@ -1,8 +1,8 @@
 1<?xml version="1.0" encoding="utf-8"?>
 2<manifest xmlns:android="http://schemas.android.com/apk/res/android"
 3    package="com.veltrix.tv"
-4    android:versionCode="5"
-5    android:versionName="1.0.5" >
+4    android:versionCode="6"
+5    android:versionName="1.0.6" >
 6
 7    <uses-sdk
 8        android:minSdkVersion="21"
@@ -47,8 +47,8 @@
 29-->/var/lib/freelancer/projects/40373506/veltrix-tv-native/app/src/main/AndroidManifest.xml:17:9-35
 30        android:appComponentFactory="androidx.core.app.CoreComponentFactory"
 30-->[androidx.core:core:1.12.0] /home/freelancer8/.gradle/caches/transforms-3/61099e8c00b8028e332fc0fb007b93c9/transformed/core-1.12.0/AndroidManifest.xml:28:18-86
-31        android:banner="@mipmap/ic_launcher"
-31-->/var/lib/freelancer/projects/40373506/veltrix-tv-native/app/src/main/AndroidManifest.xml:22:9-45
+31        android:banner="@mipmap/ic_banner"
+31-->/var/lib/freelancer/projects/40373506/veltrix-tv-native/app/src/main/AndroidManifest.xml:22:9-43
 32        android:extractNativeLibs="true"
 33        android:hardwareAccelerated="true"
 33-->/var/lib/freelancer/projects/40373506/veltrix-tv-native/app/src/main/AndroidManifest.xml:25:9-43

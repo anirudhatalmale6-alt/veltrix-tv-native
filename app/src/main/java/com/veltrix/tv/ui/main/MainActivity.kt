@@ -57,7 +57,6 @@ class MainActivity : AppCompatActivity() {
 
     private fun debug(msg: String) {
         try {
-            tvDebug.text = msg
             android.util.Log.d("VeltrixTV", msg)
         } catch (_: Exception) {}
     }

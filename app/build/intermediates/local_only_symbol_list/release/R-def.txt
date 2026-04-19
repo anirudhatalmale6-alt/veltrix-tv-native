@@ -41,6 +41,7 @@ drawable button_bg
 drawable card_bg
 drawable category_item_bg
 drawable edit_text_bg
+drawable logo_veltrix
 drawable overlay_gradient
 drawable placeholder_image
 drawable poster_gradient
@@ -137,6 +138,7 @@ layout item_poster
 layout item_search_result
 layout item_season
 layout item_sidebar
+mipmap ic_banner
 mipmap ic_launcher
 string account_disabled
 string account_expired

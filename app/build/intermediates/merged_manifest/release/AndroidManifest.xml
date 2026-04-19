@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.veltrix.tv"
-    android:versionCode="5"
-    android:versionName="1.0.5" >
+    android:versionCode="6"
+    android:versionName="1.0.6" >
 
     <uses-sdk
         android:minSdkVersion="21"
@@ -28,7 +28,7 @@
         android:name="com.veltrix.tv.VeltrixApp"
         android:allowBackup="true"
         android:appComponentFactory="androidx.core.app.CoreComponentFactory"
-        android:banner="@mipmap/ic_launcher"
+        android:banner="@mipmap/ic_banner"
         android:extractNativeLibs="true"
         android:hardwareAccelerated="true"
         android:icon="@mipmap/ic_launcher"
