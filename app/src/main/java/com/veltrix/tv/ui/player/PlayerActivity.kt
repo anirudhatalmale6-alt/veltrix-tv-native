@@ -242,8 +242,8 @@ class PlayerActivity : AppCompatActivity() {
     private fun updatePlayPauseIcon() {
         val isPlaying = player?.playWhenReady == true
         btnPlayPause.setImageResource(
-            if (isPlaying) android.R.drawable.ic_media_pause
-            else android.R.drawable.ic_media_play
+            if (isPlaying) R.drawable.ic_pause
+            else R.drawable.ic_play
         )
     }
 

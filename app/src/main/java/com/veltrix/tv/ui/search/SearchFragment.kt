@@ -16,9 +16,6 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.veltrix.tv.R
-import com.veltrix.tv.data.models.LiveStream
-import com.veltrix.tv.data.models.SeriesItem
-import com.veltrix.tv.data.models.VodStream
 import com.veltrix.tv.ui.main.MainActivity
 import com.veltrix.tv.ui.player.PlayerActivity
 import com.veltrix.tv.ui.series.SeriesDetailActivity
@@ -113,7 +110,7 @@ class SearchFragment : Fragment() {
             override fun afterTextChanged(s: Editable?) {
                 searchJob?.cancel()
                 searchJob = viewLifecycleOwner.lifecycleScope.launch {
-                    delay(500) // debounce
+                    delay(500)
                     performSearch(s?.toString() ?: "")
                 }
             }
@@ -139,16 +136,14 @@ class SearchFragment : Fragment() {
                 val results = mutableListOf<SearchResult>()
                 val q = query.lowercase()
 
-                // Search live channels (load one category at a time, search by name)
+                // Search live channels - load ALL categories, search each one
                 if (currentFilter == "all" || currentFilter == "live") {
                     try {
                         val categories = withContext(Dispatchers.IO) {
                             MainActivity.apiService.getLiveCategories(prefs.username, prefs.password)
                         }
-                        // Search through first 10 categories max to keep it fast
-                        val categoriesToSearch = categories.take(10)
-                        for (cat in categoriesToSearch) {
-                            if (results.size >= 30) break
+                        for (cat in categories) {
+                            if (results.count { it.type == "live" } >= 50) break
                             try {
                                 val streams = withContext(Dispatchers.IO) {
                                     MainActivity.apiService.getLiveStreams(
@@ -157,10 +152,16 @@ class SearchFragment : Fragment() {
                                     )
                                 }
                                 streams.filter { it.name.lowercase().contains(q) }
-                                    .take(10)
+                                    .take(5)
                                     .mapTo(results) {
                                         SearchResult(it.name, it.streamIcon, "Live", streamId = it.streamId, type = "live")
                                     }
+                                // Show partial results as we find them
+                                if (results.isNotEmpty()) {
+                                    progressBar.gone()
+                                    tvEmpty.gone()
+                                    rvResults.adapter = SearchResultAdapter(results.toList()) { r -> openResult(r) }
+                                }
                             } catch (_: Exception) {}
                         }
                     } catch (_: Exception) {}
@@ -172,9 +173,8 @@ class SearchFragment : Fragment() {
                         val categories = withContext(Dispatchers.IO) {
                             MainActivity.apiService.getVodCategories(prefs.username, prefs.password)
                         }
-                        val categoriesToSearch = categories.take(10)
-                        for (cat in categoriesToSearch) {
-                            if (results.size >= 50) break
+                        for (cat in categories) {
+                            if (results.count { it.type == "vod" } >= 50) break
                             try {
                                 val streams = withContext(Dispatchers.IO) {
                                     MainActivity.apiService.getVodStreams(
@@ -183,11 +183,16 @@ class SearchFragment : Fragment() {
                                     )
                                 }
                                 streams.filter { it.name.lowercase().contains(q) }
-                                    .take(10)
+                                    .take(5)
                                     .mapTo(results) {
                                         SearchResult(it.name, it.streamIcon, "Movie", streamId = it.streamId, type = "vod",
                                             containerExtension = it.containerExtension)
                                     }
+                                if (results.isNotEmpty()) {
+                                    progressBar.gone()
+                                    tvEmpty.gone()
+                                    rvResults.adapter = SearchResultAdapter(results.toList()) { r -> openResult(r) }
+                                }
                             } catch (_: Exception) {}
                         }
                     } catch (_: Exception) {}
@@ -199,9 +204,8 @@ class SearchFragment : Fragment() {
                         val categories = withContext(Dispatchers.IO) {
                             MainActivity.apiService.getSeriesCategories(prefs.username, prefs.password)
                         }
-                        val categoriesToSearch = categories.take(10)
-                        for (cat in categoriesToSearch) {
-                            if (results.size >= 70) break
+                        for (cat in categories) {
+                            if (results.count { it.type == "series" } >= 50) break
                             try {
                                 val series = withContext(Dispatchers.IO) {
                                     MainActivity.apiService.getSeries(
@@ -210,10 +214,15 @@ class SearchFragment : Fragment() {
                                     )
                                 }
                                 series.filter { it.name.lowercase().contains(q) }
-                                    .take(10)
+                                    .take(5)
                                     .mapTo(results) {
                                         SearchResult(it.name, it.cover, "Series", seriesId = it.seriesId, type = "series")
                                     }
+                                if (results.isNotEmpty()) {
+                                    progressBar.gone()
+                                    tvEmpty.gone()
+                                    rvResults.adapter = SearchResultAdapter(results.toList()) { r -> openResult(r) }
+                                }
                             } catch (_: Exception) {}
                         }
                     } catch (_: Exception) {}

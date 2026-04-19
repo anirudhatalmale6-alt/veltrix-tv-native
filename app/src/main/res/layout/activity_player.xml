@@ -51,16 +51,20 @@
         android:layout_gravity="bottom"
         android:orientation="vertical"
         android:background="@color/overlay_bg"
-        android:padding="16dp"
+        android:paddingStart="24dp"
+        android:paddingEnd="24dp"
+        android:paddingTop="16dp"
+        android:paddingBottom="20dp"
         android:visibility="gone">
 
         <!-- Seek bar row -->
         <LinearLayout
+            android:id="@+id/seekBarRow"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center_vertical"
-            android:layout_marginBottom="8dp">
+            android:layout_marginBottom="12dp">
 
             <TextView
                 android:id="@+id/tvPosition"
@@ -68,15 +72,16 @@
                 android:layout_height="wrap_content"
                 android:text="00:00"
                 android:textColor="@color/white"
-                android:textSize="13sp" />
+                android:textSize="14sp"
+                android:minWidth="50dp" />
 
             <SeekBar
                 android:id="@+id/seekBar"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:layout_marginStart="8dp"
-                android:layout_marginEnd="8dp"
+                android:layout_marginStart="12dp"
+                android:layout_marginEnd="12dp"
                 android:max="1000"
                 android:progressTint="@color/red"
                 android:thumbTint="@color/red"
@@ -90,73 +95,85 @@
                 android:layout_height="wrap_content"
                 android:text="00:00"
                 android:textColor="@color/white"
-                android:textSize="13sp" />
+                android:textSize="14sp"
+                android:minWidth="50dp"
+                android:gravity="end" />
 
         </LinearLayout>
 
-        <!-- Buttons row -->
+        <!-- Buttons row - large, clear icons -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center">
 
+            <!-- Rewind 10s -->
             <ImageButton
                 android:id="@+id/btnRewind"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:src="@android:drawable/ic_media_rew"
-                android:background="?android:attr/selectableItemBackgroundBorderless"
+                android:layout_width="64dp"
+                android:layout_height="64dp"
+                android:src="@drawable/ic_rewind_10"
+                android:background="@drawable/bg_player_button"
                 android:contentDescription="Rewind 10s"
-                android:layout_marginEnd="24dp"
+                android:layout_marginEnd="20dp"
                 android:scaleType="centerInside"
+                android:padding="8dp"
                 android:focusable="true"
                 android:focusableInTouchMode="true" />
 
+            <!-- Play / Pause (bigger) -->
             <ImageButton
                 android:id="@+id/btnPlayPause"
-                android:layout_width="56dp"
-                android:layout_height="56dp"
-                android:src="@android:drawable/ic_media_pause"
-                android:background="?android:attr/selectableItemBackgroundBorderless"
+                android:layout_width="80dp"
+                android:layout_height="80dp"
+                android:src="@drawable/ic_pause"
+                android:background="@drawable/bg_player_button"
                 android:contentDescription="Play/Pause"
                 android:scaleType="centerInside"
+                android:padding="12dp"
                 android:focusable="true"
                 android:focusableInTouchMode="true" />
 
+            <!-- Forward 10s -->
             <ImageButton
                 android:id="@+id/btnForward"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:src="@android:drawable/ic_media_ff"
-                android:background="?android:attr/selectableItemBackgroundBorderless"
+                android:layout_width="64dp"
+                android:layout_height="64dp"
+                android:src="@drawable/ic_forward_10"
+                android:background="@drawable/bg_player_button"
                 android:contentDescription="Forward 10s"
-                android:layout_marginStart="24dp"
+                android:layout_marginStart="20dp"
                 android:scaleType="centerInside"
+                android:padding="8dp"
                 android:focusable="true"
                 android:focusableInTouchMode="true" />
 
+            <!-- Subtitles CC -->
             <ImageButton
                 android:id="@+id/btnSubtitles"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:src="@android:drawable/ic_btn_speak_now"
-                android:background="?android:attr/selectableItemBackgroundBorderless"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:src="@drawable/ic_subtitles"
+                android:background="@drawable/bg_player_button"
                 android:contentDescription="Subtitles"
-                android:layout_marginStart="32dp"
+                android:layout_marginStart="40dp"
                 android:scaleType="centerInside"
+                android:padding="8dp"
                 android:focusable="true"
                 android:focusableInTouchMode="true" />
 
+            <!-- Picture in Picture -->
             <ImageButton
                 android:id="@+id/btnPip"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:src="@android:drawable/ic_menu_crop"
-                android:background="?android:attr/selectableItemBackgroundBorderless"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:src="@drawable/ic_pip"
+                android:background="@drawable/bg_player_button"
                 android:contentDescription="Picture in Picture"
                 android:layout_marginStart="16dp"
                 android:scaleType="centerInside"
+                android:padding="8dp"
                 android:focusable="true"
                 android:focusableInTouchMode="true" />
 

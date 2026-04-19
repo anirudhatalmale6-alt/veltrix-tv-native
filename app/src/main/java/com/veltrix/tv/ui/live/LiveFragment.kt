@@ -86,7 +86,7 @@ class LiveFragment : Fragment(), MainActivity.DpadNavigable {
                 openPlayer(stream, position)
             },
             onChannelLongClick = { stream ->
-                toggleFavorite(stream)
+                showLongPressMenu(stream)
             }
         )
         val columns = calculateGridColumns()
@@ -102,6 +102,23 @@ class LiveFragment : Fragment(), MainActivity.DpadNavigable {
         // Subtract sidebar (260dp) and category (200dp) widths, then fit cards (180dp each)
         val availableWidth = screenWidthDp - 260 - 200 - 24 // padding
         return (availableWidth / 192).toInt().coerceIn(3, 7) // 180dp card + 12dp margin
+    }
+
+    private fun showLongPressMenu(stream: LiveStream) {
+        val options = arrayOf("Add/Remove Favorite", "Play in Mini Player")
+        androidx.appcompat.app.AlertDialog.Builder(requireContext())
+            .setTitle(stream.name)
+            .setItems(options) { _, which ->
+                when (which) {
+                    0 -> toggleFavorite(stream)
+                    1 -> {
+                        val prefs = MainActivity.prefsInstance
+                        val streamUrl = "${prefs.getBaseUrl()}/live/${prefs.username}/${prefs.password}/${stream.streamId}.ts"
+                        (activity as? MainActivity)?.startMiniPlayer(streamUrl, stream.name)
+                    }
+                }
+            }
+            .show()
     }
 
     private fun toggleFavorite(stream: LiveStream) {

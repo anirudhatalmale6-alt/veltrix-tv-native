@@ -1,12 +1,18 @@
 package com.veltrix.tv.ui.main
 
+import android.net.Uri
 import android.os.Bundle
 import android.view.KeyEvent
 import android.widget.FrameLayout
+import android.widget.ImageButton
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
+import androidx.media3.common.MediaItem
+import androidx.media3.common.Player
+import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.ui.PlayerView
 import com.veltrix.tv.R
 import com.veltrix.tv.data.PrefsManager
 import com.veltrix.tv.data.api.XtreamApiService
@@ -29,6 +35,11 @@ class MainActivity : AppCompatActivity() {
     private lateinit var contentContainer: FrameLayout
     private lateinit var sidebarContainer: FrameLayout
     private lateinit var tvDebug: TextView
+    private lateinit var miniPlayerContainer: FrameLayout
+    private lateinit var miniPlayerView: PlayerView
+    private lateinit var tvMiniChannelName: TextView
+    private lateinit var btnCloseMiniPlayer: ImageButton
+    private var miniPlayer: ExoPlayer? = null
     private var currentContentFragment: Fragment? = null
     private var exitConfirmed = false
 
@@ -49,6 +60,15 @@ class MainActivity : AppCompatActivity() {
         sidebarContainer = findViewById(R.id.sidebarContainer)
         contentContainer = findViewById(R.id.contentContainer)
         tvDebug = findViewById(R.id.tvDebug)
+
+        miniPlayerContainer = findViewById(R.id.miniPlayerContainer)
+        miniPlayerView = findViewById(R.id.miniPlayerView)
+        tvMiniChannelName = findViewById(R.id.tvMiniChannelName)
+        btnCloseMiniPlayer = findViewById(R.id.btnCloseMiniPlayer)
+
+        btnCloseMiniPlayer.setOnClickListener {
+            closeMiniPlayer()
+        }
 
         initApi()
         setupSidebar()
@@ -243,6 +263,41 @@ class MainActivity : AppCompatActivity() {
         } catch (e: Exception) {
             debug("Dialog error: ${e.message}")
         }
+    }
+
+    // Mini player methods
+    fun startMiniPlayer(streamUrl: String, channelName: String) {
+        try {
+            closeMiniPlayer()
+            miniPlayer = ExoPlayer.Builder(this).build().also {
+                miniPlayerView.player = it
+                val mediaItem = MediaItem.fromUri(Uri.parse(streamUrl))
+                it.setMediaItem(mediaItem)
+                it.prepare()
+                it.playWhenReady = true
+            }
+            tvMiniChannelName.text = channelName
+            miniPlayerContainer.visibility = android.view.View.VISIBLE
+        } catch (e: Exception) {
+            debug("Mini player error: ${e.message}")
+        }
+    }
+
+    fun closeMiniPlayer() {
+        try {
+            miniPlayer?.release()
+            miniPlayer = null
+            miniPlayerContainer.visibility = android.view.View.GONE
+        } catch (_: Exception) {}
+    }
+
+    fun isMiniPlayerVisible(): Boolean {
+        return miniPlayerContainer.visibility == android.view.View.VISIBLE
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        closeMiniPlayer()
     }
 
     /** Interface for fragments that handle D-pad navigation */
