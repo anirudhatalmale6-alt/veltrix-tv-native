@@ -1,0 +1,91 @@
+package com.veltrix.tv.ui.main;
+
+@kotlin.Metadata(mv = {1, 9, 0}, k = 1, xi = 48, d1 = {"\u0000T\n\u0002\u0018\u0002\n\u0002\u0018\u0002\n\u0002\b\u0002\n\u0002\u0018\u0002\n\u0000\n\u0002\u0018\u0002\n\u0000\n\u0002\u0018\u0002\n\u0002\b\u0002\n\u0002\u0018\u0002\n\u0000\n\u0002\u0018\u0002\n\u0002\b\u0002\n\u0002\u0010\u0002\n\u0002\b\u0002\n\u0002\u0010\u000b\n\u0002\b\u0003\n\u0002\u0018\u0002\n\u0002\b\u0002\n\u0002\u0010\b\n\u0000\n\u0002\u0018\u0002\n\u0002\b\b\u0018\u0000 \"2\u00020\u0001:\u0002\"#B\u0005\u00a2\u0006\u0002\u0010\u0002J\u0012\u0010\f\u001a\u0004\u0018\u00010\r2\u0006\u0010\u000e\u001a\u00020\rH\u0002J\b\u0010\u000f\u001a\u00020\u0010H\u0002J\b\u0010\u0011\u001a\u00020\u0010H\u0002J\b\u0010\u0012\u001a\u00020\u0013H\u0002J\b\u0010\u0014\u001a\u00020\u0013H\u0002J\u0012\u0010\u0015\u001a\u00020\u00102\b\u0010\u0016\u001a\u0004\u0018\u00010\u0017H\u0014J\u001a\u0010\u0018\u001a\u00020\u00132\u0006\u0010\u0019\u001a\u00020\u001a2\b\u0010\u001b\u001a\u0004\u0018\u00010\u001cH\u0016J\b\u0010\u001d\u001a\u00020\u0010H\u0002J\b\u0010\u001e\u001a\u00020\u0010H\u0002J\u0010\u0010\u001f\u001a\u00020\u00102\u0006\u0010 \u001a\u00020\u001aH\u0002J\u0014\u0010!\u001a\u00020\u0013*\u00020\r2\u0006\u0010\u000e\u001a\u00020\rH\u0002R\u000e\u0010\u0003\u001a\u00020\u0004X\u0082.\u00a2\u0006\u0002\n\u0000R\u0010\u0010\u0005\u001a\u0004\u0018\u00010\u0006X\u0082\u000e\u00a2\u0006\u0002\n\u0000R\u000e\u0010\u0007\u001a\u00020\bX\u0082.\u00a2\u0006\u0002\n\u0000R\u000e\u0010\t\u001a\u00020\u0004X\u0082.\u00a2\u0006\u0002\n\u0000R\u000e\u0010\n\u001a\u00020\u000bX\u0082.\u00a2\u0006\u0002\n\u0000\u00a8\u0006$"}, d2 = {"Lcom/veltrix/tv/ui/main/MainActivity;", "Landroidx/appcompat/app/AppCompatActivity;", "()V", "contentContainer", "Landroid/widget/FrameLayout;", "currentContentFragment", "Landroidx/fragment/app/Fragment;", "prefs", "Lcom/veltrix/tv/data/PrefsManager;", "sidebarContainer", "sidebarFragment", "Lcom/veltrix/tv/ui/main/SidebarFragment;", "findFirstFocusable", "Landroid/view/View;", "view", "focusFirstInContent", "", "initApi", "isFocusInContent", "", "isFocusInSidebar", "onCreate", "savedInstanceState", "Landroid/os/Bundle;", "onKeyDown", "keyCode", "", "event", "Landroid/view/KeyEvent;", "setupSidebar", "showExitDialog", "switchContent", "sectionId", "isAncestorOf", "Companion", "DpadNavigable", "app_release"})
+public final class MainActivity extends androidx.appcompat.app.AppCompatActivity {
+    private com.veltrix.tv.ui.main.SidebarFragment sidebarFragment;
+    private com.veltrix.tv.data.PrefsManager prefs;
+    private android.widget.FrameLayout contentContainer;
+    private android.widget.FrameLayout sidebarContainer;
+    @org.jetbrains.annotations.Nullable
+    private androidx.fragment.app.Fragment currentContentFragment;
+    private static com.veltrix.tv.data.api.XtreamApiService apiService;
+    private static com.veltrix.tv.data.PrefsManager prefsInstance;
+    @org.jetbrains.annotations.NotNull
+    public static final com.veltrix.tv.ui.main.MainActivity.Companion Companion = null;
+    
+    public MainActivity() {
+        super();
+    }
+    
+    @java.lang.Override
+    protected void onCreate(@org.jetbrains.annotations.Nullable
+    android.os.Bundle savedInstanceState) {
+    }
+    
+    private final void initApi() {
+    }
+    
+    private final void setupSidebar() {
+    }
+    
+    private final void switchContent(int sectionId) {
+    }
+    
+    private final boolean isFocusInSidebar() {
+        return false;
+    }
+    
+    private final boolean isFocusInContent() {
+        return false;
+    }
+    
+    private final void focusFirstInContent() {
+    }
+    
+    private final android.view.View findFirstFocusable(android.view.View view) {
+        return null;
+    }
+    
+    @java.lang.Override
+    public boolean onKeyDown(int keyCode, @org.jetbrains.annotations.Nullable
+    android.view.KeyEvent event) {
+        return false;
+    }
+    
+    private final void showExitDialog() {
+    }
+    
+    private final boolean isAncestorOf(android.view.View $this$isAncestorOf, android.view.View view) {
+        return false;
+    }
+    
+    @kotlin.Metadata(mv = {1, 9, 0}, k = 1, xi = 48, d1 = {"\u0000\u001c\n\u0002\u0018\u0002\n\u0002\u0010\u0000\n\u0002\b\u0002\n\u0002\u0018\u0002\n\u0002\b\u0003\n\u0002\u0018\u0002\n\u0002\b\u0004\b\u0086\u0003\u0018\u00002\u00020\u0001B\u0007\b\u0002\u00a2\u0006\u0002\u0010\u0002R\u001e\u0010\u0005\u001a\u00020\u00042\u0006\u0010\u0003\u001a\u00020\u0004@BX\u0086.\u00a2\u0006\b\n\u0000\u001a\u0004\b\u0006\u0010\u0007R\u001e\u0010\t\u001a\u00020\b2\u0006\u0010\u0003\u001a\u00020\b@BX\u0086.\u00a2\u0006\b\n\u0000\u001a\u0004\b\n\u0010\u000b\u00a8\u0006\f"}, d2 = {"Lcom/veltrix/tv/ui/main/MainActivity$Companion;", "", "()V", "<set-?>", "Lcom/veltrix/tv/data/api/XtreamApiService;", "apiService", "getApiService", "()Lcom/veltrix/tv/data/api/XtreamApiService;", "Lcom/veltrix/tv/data/PrefsManager;", "prefsInstance", "getPrefsInstance", "()Lcom/veltrix/tv/data/PrefsManager;", "app_release"})
+    public static final class Companion {
+        
+        private Companion() {
+            super();
+        }
+        
+        @org.jetbrains.annotations.NotNull
+        public final com.veltrix.tv.data.api.XtreamApiService getApiService() {
+            return null;
+        }
+        
+        @org.jetbrains.annotations.NotNull
+        public final com.veltrix.tv.data.PrefsManager getPrefsInstance() {
+            return null;
+        }
+    }
+    
+    /**
+     * Interface for fragments that handle D-pad navigation
+     */
+    @kotlin.Metadata(mv = {1, 9, 0}, k = 1, xi = 48, d1 = {"\u0000\u0010\n\u0002\u0018\u0002\n\u0002\u0010\u0000\n\u0000\n\u0002\u0010\u000b\n\u0000\bf\u0018\u00002\u00020\u0001J\b\u0010\u0002\u001a\u00020\u0003H&\u00a8\u0006\u0004"}, d2 = {"Lcom/veltrix/tv/ui/main/MainActivity$DpadNavigable;", "", "canGoLeft", "", "app_release"})
+    public static abstract interface DpadNavigable {
+        
+        /**
+         * Returns true if this fragment has a sub-area to navigate LEFT to (e.g., categories)
+         */
+        public abstract boolean canGoLeft();
+    }
+}
