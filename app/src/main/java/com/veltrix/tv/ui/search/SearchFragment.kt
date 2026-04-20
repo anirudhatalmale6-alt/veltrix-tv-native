@@ -16,6 +16,9 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.veltrix.tv.R
+import com.veltrix.tv.data.models.LiveStream
+import com.veltrix.tv.data.models.VodStream
+import com.veltrix.tv.data.models.SeriesItem
 import com.veltrix.tv.ui.main.MainActivity
 import com.veltrix.tv.ui.player.PlayerActivity
 import com.veltrix.tv.ui.series.SeriesDetailActivity
@@ -41,7 +44,14 @@ class SearchFragment : Fragment() {
     private lateinit var tabSeries: TextView
 
     private var searchJob: Job? = null
+    private var loadJob: Job? = null
     private var currentFilter = "all"
+
+    // Cached data for searching
+    private var cachedLive = listOf<LiveStream>()
+    private var cachedVod = listOf<VodStream>()
+    private var cachedSeries = listOf<SeriesItem>()
+    private var isDataLoaded = false
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -66,6 +76,63 @@ class SearchFragment : Fragment() {
 
         setupTabs()
         setupSearch()
+        preloadData()
+    }
+
+    private fun preloadData() {
+        val prefs = MainActivity.prefsInstance
+        progressBar.visible()
+        tvEmpty.gone()
+
+        loadJob = viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                // Load all live, vod, series in parallel
+                val liveDeferred = withContext(Dispatchers.IO) {
+                    try {
+                        MainActivity.apiService.getLiveStreams(prefs.username, prefs.password)
+                    } catch (e: Exception) {
+                        android.util.Log.e("VeltrixTV", "Search: live load error", e)
+                        emptyList()
+                    }
+                }
+                cachedLive = liveDeferred
+                android.util.Log.d("VeltrixTV", "Search: loaded ${cachedLive.size} live channels")
+
+                val vodDeferred = withContext(Dispatchers.IO) {
+                    try {
+                        MainActivity.apiService.getVodStreams(prefs.username, prefs.password)
+                    } catch (e: Exception) {
+                        android.util.Log.e("VeltrixTV", "Search: vod load error", e)
+                        emptyList()
+                    }
+                }
+                cachedVod = vodDeferred
+                android.util.Log.d("VeltrixTV", "Search: loaded ${cachedVod.size} movies")
+
+                val seriesDeferred = withContext(Dispatchers.IO) {
+                    try {
+                        MainActivity.apiService.getSeries(prefs.username, prefs.password)
+                    } catch (e: Exception) {
+                        android.util.Log.e("VeltrixTV", "Search: series load error", e)
+                        emptyList()
+                    }
+                }
+                cachedSeries = seriesDeferred
+                android.util.Log.d("VeltrixTV", "Search: loaded ${cachedSeries.size} series")
+
+                isDataLoaded = true
+                progressBar.gone()
+
+                val total = cachedLive.size + cachedVod.size + cachedSeries.size
+                tvEmpty.text = "Search ${cachedLive.size} channels, ${cachedVod.size} movies, ${cachedSeries.size} series"
+                tvEmpty.visible()
+            } catch (e: Exception) {
+                android.util.Log.e("VeltrixTV", "Search preload error", e)
+                progressBar.gone()
+                tvEmpty.text = "Error loading data: ${e.message}"
+                tvEmpty.visible()
+            }
+        }
     }
 
     private fun setupTabs() {
@@ -110,7 +177,7 @@ class SearchFragment : Fragment() {
             override fun afterTextChanged(s: Editable?) {
                 searchJob?.cancel()
                 searchJob = viewLifecycleOwner.lifecycleScope.launch {
-                    delay(500)
+                    delay(300)
                     performSearch(s?.toString() ?: "")
                 }
             }
@@ -120,130 +187,60 @@ class SearchFragment : Fragment() {
     private fun performSearch(query: String) {
         if (query.length < 2) {
             rvResults.adapter = null
-            tvEmpty.text = "Type to search..."
+            if (isDataLoaded) {
+                tvEmpty.text = "Search ${cachedLive.size} channels, ${cachedVod.size} movies, ${cachedSeries.size} series"
+            } else {
+                tvEmpty.text = "Loading data..."
+            }
             tvEmpty.visible()
-            progressBar.gone()
             return
         }
 
-        val prefs = MainActivity.prefsInstance
-        progressBar.visible()
-        tvEmpty.gone()
+        if (!isDataLoaded) {
+            tvEmpty.text = "Still loading data, please wait..."
+            tvEmpty.visible()
+            return
+        }
 
-        searchJob?.cancel()
-        searchJob = viewLifecycleOwner.lifecycleScope.launch {
-            try {
-                val results = mutableListOf<SearchResult>()
-                val q = query.lowercase()
+        val q = query.lowercase()
+        val results = mutableListOf<SearchResult>()
 
-                // Search live channels - load ALL categories, search each one
-                if (currentFilter == "all" || currentFilter == "live") {
-                    try {
-                        val categories = withContext(Dispatchers.IO) {
-                            MainActivity.apiService.getLiveCategories(prefs.username, prefs.password)
-                        }
-                        for (cat in categories) {
-                            if (results.count { it.type == "live" } >= 50) break
-                            try {
-                                val streams = withContext(Dispatchers.IO) {
-                                    MainActivity.apiService.getLiveStreams(
-                                        prefs.username, prefs.password,
-                                        categoryId = cat.categoryId
-                                    )
-                                }
-                                streams.filter { it.name.lowercase().contains(q) }
-                                    .take(5)
-                                    .mapTo(results) {
-                                        SearchResult(it.name, it.streamIcon, "Live", streamId = it.streamId, type = "live")
-                                    }
-                                // Show partial results as we find them
-                                if (results.isNotEmpty()) {
-                                    progressBar.gone()
-                                    tvEmpty.gone()
-                                    rvResults.adapter = SearchResultAdapter(results.toList()) { r -> openResult(r) }
-                                }
-                            } catch (_: Exception) {}
-                        }
-                    } catch (_: Exception) {}
+        // Search live channels
+        if (currentFilter == "all" || currentFilter == "live") {
+            cachedLive.filter { it.name.lowercase().contains(q) }
+                .take(50)
+                .mapTo(results) {
+                    SearchResult(it.name, it.streamIcon, "Live", streamId = it.streamId, type = "live")
                 }
+        }
 
-                // Search movies
-                if (currentFilter == "all" || currentFilter == "vod") {
-                    try {
-                        val categories = withContext(Dispatchers.IO) {
-                            MainActivity.apiService.getVodCategories(prefs.username, prefs.password)
-                        }
-                        for (cat in categories) {
-                            if (results.count { it.type == "vod" } >= 50) break
-                            try {
-                                val streams = withContext(Dispatchers.IO) {
-                                    MainActivity.apiService.getVodStreams(
-                                        prefs.username, prefs.password,
-                                        categoryId = cat.categoryId
-                                    )
-                                }
-                                streams.filter { it.name.lowercase().contains(q) }
-                                    .take(5)
-                                    .mapTo(results) {
-                                        SearchResult(it.name, it.streamIcon, "Movie", streamId = it.streamId, type = "vod",
-                                            containerExtension = it.containerExtension)
-                                    }
-                                if (results.isNotEmpty()) {
-                                    progressBar.gone()
-                                    tvEmpty.gone()
-                                    rvResults.adapter = SearchResultAdapter(results.toList()) { r -> openResult(r) }
-                                }
-                            } catch (_: Exception) {}
-                        }
-                    } catch (_: Exception) {}
+        // Search movies
+        if (currentFilter == "all" || currentFilter == "vod") {
+            cachedVod.filter { it.name.lowercase().contains(q) }
+                .take(50)
+                .mapTo(results) {
+                    SearchResult(it.name, it.streamIcon, "Movie", streamId = it.streamId, type = "vod",
+                        containerExtension = it.containerExtension)
                 }
+        }
 
-                // Search series
-                if (currentFilter == "all" || currentFilter == "series") {
-                    try {
-                        val categories = withContext(Dispatchers.IO) {
-                            MainActivity.apiService.getSeriesCategories(prefs.username, prefs.password)
-                        }
-                        for (cat in categories) {
-                            if (results.count { it.type == "series" } >= 50) break
-                            try {
-                                val series = withContext(Dispatchers.IO) {
-                                    MainActivity.apiService.getSeries(
-                                        prefs.username, prefs.password,
-                                        categoryId = cat.categoryId
-                                    )
-                                }
-                                series.filter { it.name.lowercase().contains(q) }
-                                    .take(5)
-                                    .mapTo(results) {
-                                        SearchResult(it.name, it.cover, "Series", seriesId = it.seriesId, type = "series")
-                                    }
-                                if (results.isNotEmpty()) {
-                                    progressBar.gone()
-                                    tvEmpty.gone()
-                                    rvResults.adapter = SearchResultAdapter(results.toList()) { r -> openResult(r) }
-                                }
-                            } catch (_: Exception) {}
-                        }
-                    } catch (_: Exception) {}
+        // Search series
+        if (currentFilter == "all" || currentFilter == "series") {
+            cachedSeries.filter { it.name.lowercase().contains(q) }
+                .take(50)
+                .mapTo(results) {
+                    SearchResult(it.name, it.cover, "Series", seriesId = it.seriesId, type = "series")
                 }
+        }
 
-                progressBar.gone()
-
-                if (results.isEmpty()) {
-                    tvEmpty.text = "No results for \"$query\""
-                    tvEmpty.visible()
-                    rvResults.adapter = null
-                } else {
-                    tvEmpty.gone()
-                    rvResults.adapter = SearchResultAdapter(results) { result ->
-                        openResult(result)
-                    }
-                }
-            } catch (e: Exception) {
-                progressBar.gone()
-                tvEmpty.text = "Search error"
-                tvEmpty.visible()
+        if (results.isEmpty()) {
+            tvEmpty.text = "No results for \"$query\""
+            tvEmpty.visible()
+            rvResults.adapter = null
+        } else {
+            tvEmpty.gone()
+            rvResults.adapter = SearchResultAdapter(results) { result ->
+                openResult(result)
             }
         }
     }
@@ -306,7 +303,7 @@ class SearchFragment : Fragment() {
             init {
                 FocusHighlightHelper.setupFocusHighlight(itemView)
                 itemView.setOnClickListener {
-                    val pos = adapterPosition
+                    val pos = bindingAdapterPosition
                     if (pos != RecyclerView.NO_POSITION) {
                         onClick(items[pos])
                     }
@@ -328,5 +325,11 @@ class SearchFragment : Fragment() {
         }
 
         override fun getItemCount(): Int = items.size
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        loadJob?.cancel()
+        searchJob?.cancel()
     }
 }

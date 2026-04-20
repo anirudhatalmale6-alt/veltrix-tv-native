@@ -20,6 +20,7 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.ui.PlayerView
 import com.veltrix.tv.R
+import com.veltrix.tv.data.models.Category
 import com.veltrix.tv.data.models.LiveStream
 import com.veltrix.tv.ui.main.MainActivity
 import kotlinx.coroutines.Dispatchers
@@ -34,8 +35,8 @@ class MultiScreenFragment : Fragment() {
     private val focusBorders = arrayOfNulls<View>(4)
     private val containers = arrayOfNulls<View>(4)
 
-    private var allChannels = listOf<LiveStream>()
-    private var channelNames = arrayOf<String>()
+    private var categories = listOf<Category>()
+    private val channelsByCategory = mutableMapOf<String, List<LiveStream>>()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -74,68 +75,105 @@ class MultiScreenFragment : Fragment() {
                 (containers[idx] as? ViewGroup)?.let { container ->
                     if (hasFocus) {
                         container.setBackgroundColor(Color.parseColor("#44FF0000"))
+                        // Unmute focused quadrant, mute others
+                        for (j in 0..3) {
+                            players[j]?.volume = if (j == idx) 1f else 0f
+                        }
                     } else {
                         container.setBackgroundColor(Color.parseColor("#1A1A2E"))
                     }
                 }
             }
             focusBorders[i]?.setOnClickListener {
-                showChannelPicker(idx)
+                showCategoryPicker(idx)
             }
         }
+
+        // Set D-pad navigation order for 2x2 grid
+        focusBorders[0]?.nextFocusRightId = R.id.focusBorder2
+        focusBorders[0]?.nextFocusDownId = R.id.focusBorder3
+        focusBorders[1]?.nextFocusLeftId = R.id.focusBorder1
+        focusBorders[1]?.nextFocusDownId = R.id.focusBorder4
+        focusBorders[2]?.nextFocusRightId = R.id.focusBorder4
+        focusBorders[2]?.nextFocusUpId = R.id.focusBorder1
+        focusBorders[3]?.nextFocusLeftId = R.id.focusBorder3
+        focusBorders[3]?.nextFocusUpId = R.id.focusBorder2
 
         // Focus the first quadrant
         focusBorders[0]?.requestFocus()
 
-        // Load available channels
-        loadChannels()
+        // Load categories
+        loadCategories()
     }
 
-    private fun loadChannels() {
+    private fun loadCategories() {
         val prefs = MainActivity.prefsInstance
         viewLifecycleOwner.lifecycleScope.launch {
             try {
-                val categories = withContext(Dispatchers.IO) {
+                categories = withContext(Dispatchers.IO) {
                     MainActivity.apiService.getLiveCategories(prefs.username, prefs.password)
                 }
-                // Load channels from first few categories to keep it fast
-                val channels = mutableListOf<LiveStream>()
-                for (cat in categories.take(20)) {
-                    if (channels.size >= 500) break
-                    try {
-                        val streams = withContext(Dispatchers.IO) {
-                            MainActivity.apiService.getLiveStreams(
-                                prefs.username, prefs.password,
-                                categoryId = cat.categoryId
-                            )
-                        }
-                        channels.addAll(streams)
-                    } catch (_: Exception) {}
-                }
-                allChannels = channels
-                channelNames = channels.map { it.name }.toTypedArray()
+                android.util.Log.d("VeltrixTV", "MultiScreen: loaded ${categories.size} categories")
             } catch (e: Exception) {
-                android.util.Log.e("VeltrixTV", "MultiScreen loadChannels error", e)
+                android.util.Log.e("VeltrixTV", "MultiScreen loadCategories error", e)
             }
         }
     }
 
-    private fun showChannelPicker(quadrant: Int) {
-        if (channelNames.isEmpty()) {
-            android.widget.Toast.makeText(requireContext(), "Loading channels...", android.widget.Toast.LENGTH_SHORT).show()
+    private fun showCategoryPicker(quadrant: Int) {
+        if (categories.isEmpty()) {
+            android.widget.Toast.makeText(requireContext(), "Loading categories...", android.widget.Toast.LENGTH_SHORT).show()
             return
         }
 
+        val categoryNames = categories.map { it.categoryName }.toTypedArray()
+
         AlertDialog.Builder(requireContext())
-            .setTitle("Select Channel for Screen ${quadrant + 1}")
-            .setItems(channelNames) { _, which ->
-                val stream = allChannels[which]
-                playInQuadrant(quadrant, stream)
+            .setTitle("Screen ${quadrant + 1} - Select Category")
+            .setItems(categoryNames) { _, which ->
+                val category = categories[which]
+                loadChannelsForCategory(quadrant, category)
             }
-            .setNegativeButton("Stop") { _, _ ->
+            .setNeutralButton("Stop") { _, _ ->
                 stopQuadrant(quadrant)
             }
             .show()
+    }
+
+    private fun loadChannelsForCategory(quadrant: Int, category: Category) {
+        val prefs = MainActivity.prefsInstance
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                // Check cache first
+                val channels = channelsByCategory[category.categoryId] ?: withContext(Dispatchers.IO) {
+                    MainActivity.apiService.getLiveStreams(
+                        prefs.username, prefs.password,
+                        categoryId = category.categoryId
+                    )
+                }.also {
+                    channelsByCategory[category.categoryId] = it
+                }
+
+                if (channels.isEmpty()) {
+                    android.widget.Toast.makeText(requireContext(), "No channels in this category", android.widget.Toast.LENGTH_SHORT).show()
+                    return@launch
+                }
+
+                val channelNames = channels.map { it.name }.toTypedArray()
+
+                AlertDialog.Builder(requireContext())
+                    .setTitle("${category.categoryName} - Select Channel")
+                    .setItems(channelNames) { _, which ->
+                        val stream = channels[which]
+                        playInQuadrant(quadrant, stream)
+                    }
+                    .show()
+            } catch (e: Exception) {
+                android.util.Log.e("VeltrixTV", "MultiScreen load channels error", e)
+                android.widget.Toast.makeText(requireContext(), "Error loading channels", android.widget.Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     private fun playInQuadrant(quadrant: Int, stream: LiveStream) {
@@ -195,8 +233,9 @@ class MultiScreenFragment : Fragment() {
         player.setMediaItem(MediaItem.fromUri(Uri.parse(streamUrl)))
         player.prepare()
         player.playWhenReady = true
-        // Mute all except focused quadrant
-        player.volume = 0f
+        // Only unmute if this quadrant is focused
+        val isFocused = focusBorders[quadrant]?.isFocused == true
+        player.volume = if (isFocused) 1f else 0f
 
         players[quadrant] = player
         channelLabels[quadrant]?.text = "${quadrant + 1} - ${stream.name}"

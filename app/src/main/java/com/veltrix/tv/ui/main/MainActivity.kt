@@ -237,6 +237,11 @@ class MainActivity : AppCompatActivity() {
                     }
                 }
                 KeyEvent.KEYCODE_BACK -> {
+                    // Close mini-player first if visible
+                    if (isMiniPlayerVisible()) {
+                        closeMiniPlayer()
+                        return true
+                    }
                     if (isFocusInContent()) {
                         sidebarFragment.focusCurrentItem()
                         return true
