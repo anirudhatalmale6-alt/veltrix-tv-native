@@ -84,6 +84,7 @@ class PlayerActivity : AppCompatActivity() {
     private lateinit var btnForward: ImageButton
     private lateinit var btnSubtitles: ImageButton
     private lateinit var btnPip: ImageButton
+    private lateinit var btnFavorite: ImageButton
     private lateinit var tvPosition: TextView
     private lateinit var tvDuration: TextView
     private lateinit var seekBar: SeekBar
@@ -151,6 +152,7 @@ class PlayerActivity : AppCompatActivity() {
         btnForward = findViewById(R.id.btnForward)
         btnSubtitles = findViewById(R.id.btnSubtitles)
         btnPip = findViewById(R.id.btnPip)
+        btnFavorite = findViewById(R.id.btnFavorite)
         tvPosition = findViewById(R.id.tvPosition)
         tvDuration = findViewById(R.id.tvDuration)
         seekBar = findViewById(R.id.seekBar)
@@ -236,12 +238,17 @@ class PlayerActivity : AppCompatActivity() {
 
         btnPip.setOnClickListener {
             if (streamType == "live") {
-                // For live TV: minimize to mini-player in MainActivity
                 minimizeToMiniPlayer()
             } else {
                 enterPipMode()
             }
         }
+
+        btnFavorite.setOnClickListener {
+            toggleFavorite()
+            resetOverlayTimer()
+        }
+        checkFavoriteState()
 
         seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(sb: SeekBar?, progress: Int, fromUser: Boolean) {
@@ -259,7 +266,7 @@ class PlayerActivity : AppCompatActivity() {
         })
 
         // Make buttons focusable for D-pad
-        listOf(btnPlayPause, btnRewind, btnForward, btnSubtitles, btnPip).forEach { btn ->
+        listOf(btnPlayPause, btnRewind, btnForward, btnSubtitles, btnPip, btnFavorite).forEach { btn ->
             btn.isFocusable = true
             btn.isFocusableInTouchMode = true
         }
@@ -517,6 +524,53 @@ class PlayerActivity : AppCompatActivity() {
                     dao.updateProgress(historyId, pos, dur, System.currentTimeMillis())
                 }
             }
+        }
+    }
+
+    private var isFavorite = false
+
+    private fun checkFavoriteState() {
+        val streamId = extractStreamId() ?: return
+        val dao = AppDatabase.getInstance(this).favoriteDao()
+        lifecycleScope.launch {
+            isFavorite = withContext(Dispatchers.IO) {
+                dao.isFavorite(streamId, streamType)
+            }
+            btnFavorite.setImageResource(
+                if (isFavorite) R.drawable.ic_favorite_filled else R.drawable.ic_favorite_border
+            )
+        }
+    }
+
+    private fun toggleFavorite() {
+        val streamId = extractStreamId() ?: return
+        val dao = AppDatabase.getInstance(this).favoriteDao()
+        lifecycleScope.launch {
+            withContext(Dispatchers.IO) {
+                if (isFavorite) {
+                    dao.delete(streamId, streamType)
+                } else {
+                    dao.insert(
+                        com.veltrix.tv.data.local.FavoriteEntity(
+                            streamId = streamId,
+                            name = channelName,
+                            icon = streamIcon,
+                            type = streamType,
+                            categoryId = null,
+                            containerExtension = containerExt
+                        )
+                    )
+                }
+            }
+            isFavorite = !isFavorite
+            btnFavorite.setImageResource(
+                if (isFavorite) R.drawable.ic_favorite_filled else R.drawable.ic_favorite_border
+            )
+            android.widget.Toast.makeText(
+                this@PlayerActivity,
+                if (isFavorite) "Added to Favorites" else "Removed from Favorites",
+                android.widget.Toast.LENGTH_SHORT
+            ).show()
         }
     }
 

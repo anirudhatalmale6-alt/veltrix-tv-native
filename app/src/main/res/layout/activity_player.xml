@@ -256,6 +256,20 @@
                 android:focusable="true"
                 android:focusableInTouchMode="true" />
 
+            <!-- Favorite -->
+            <ImageButton
+                android:id="@+id/btnFavorite"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:src="@drawable/ic_favorite_border"
+                android:background="@drawable/bg_player_button"
+                android:contentDescription="Add to Favorites"
+                android:layout_marginStart="16dp"
+                android:scaleType="centerInside"
+                android:padding="8dp"
+                android:focusable="true"
+                android:focusableInTouchMode="true" />
+
         </LinearLayout>
 
     </LinearLayout>
