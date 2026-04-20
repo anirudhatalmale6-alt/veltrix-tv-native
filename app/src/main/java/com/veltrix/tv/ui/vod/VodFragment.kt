@@ -188,13 +188,32 @@ class VodFragment : Fragment(), MainActivity.DpadNavigable {
                     }
                 }
 
-                vodAdapter.submitList(streams)
-                progressBar.gone()
-
-                if (streams.isEmpty()) {
-                    tvEmpty.visible()
+                if (streams.isEmpty() && categoryId != "0") {
+                    // First category was empty - try loading all movies
+                    android.util.Log.d("VeltrixTV", "Category $categoryId empty, loading all VOD")
+                    val allStreams = withContext(Dispatchers.IO) {
+                        MainActivity.apiService.getVodStreams(prefs.username, prefs.password)
+                    }
+                    val limited = if (allStreams.size > 200) allStreams.take(200) else allStreams
+                    vodAdapter.submitList(limited)
+                    progressBar.gone()
+                    if (limited.isEmpty()) {
+                        tvEmpty.text = "No movies found"
+                        tvEmpty.visible()
+                    } else {
+                        tvEmpty.gone()
+                        // Select "All" in category list
+                        categoryAdapter.setSelected(0)
+                    }
                 } else {
-                    tvEmpty.gone()
+                    vodAdapter.submitList(streams)
+                    progressBar.gone()
+                    if (streams.isEmpty()) {
+                        tvEmpty.text = "No movies found"
+                        tvEmpty.visible()
+                    } else {
+                        tvEmpty.gone()
+                    }
                 }
             } catch (e: Exception) {
                 android.util.Log.e("VeltrixTV", "VodFragment load error", e)

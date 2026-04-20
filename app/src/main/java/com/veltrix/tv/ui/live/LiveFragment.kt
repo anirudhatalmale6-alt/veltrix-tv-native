@@ -194,11 +194,32 @@ class LiveFragment : Fragment(), MainActivity.DpadNavigable {
                     }
                 }
 
+                if (streams.isEmpty() && categoryId != "0") {
+                    // First category was empty - try loading all live streams
+                    android.util.Log.d("VeltrixTV", "Category $categoryId empty, loading all live")
+                    val allLive = withContext(Dispatchers.IO) {
+                        MainActivity.apiService.getLiveStreams(prefs.username, prefs.password)
+                    }
+                    val limited = if (allLive.size > 200) allLive.take(200) else allLive
+                    allStreams = limited
+                    channelAdapter.submitList(limited)
+                    progressBar.gone()
+                    if (limited.isEmpty()) {
+                        tvEmpty.text = "No channels found"
+                        tvEmpty.visible()
+                    } else {
+                        tvEmpty.gone()
+                        categoryAdapter.setSelected(0)
+                    }
+                    return@launch
+                }
+
                 allStreams = streams
                 channelAdapter.submitList(streams)
                 progressBar.gone()
 
                 if (streams.isEmpty()) {
+                    tvEmpty.text = "No channels found"
                     tvEmpty.visible()
                 } else {
                     tvEmpty.gone()

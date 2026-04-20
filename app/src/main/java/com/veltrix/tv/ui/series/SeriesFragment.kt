@@ -181,13 +181,31 @@ class SeriesFragment : Fragment(), MainActivity.DpadNavigable {
                     }
                 }
 
-                seriesAdapter.submitList(series)
-                progressBar.gone()
-
-                if (series.isEmpty()) {
-                    tvEmpty.visible()
+                if (series.isEmpty() && categoryId != "0") {
+                    // First category was empty - try loading all series
+                    android.util.Log.d("VeltrixTV", "Category $categoryId empty, loading all series")
+                    val allSeries = withContext(Dispatchers.IO) {
+                        MainActivity.apiService.getSeries(prefs.username, prefs.password)
+                    }
+                    val limited = if (allSeries.size > 200) allSeries.take(200) else allSeries
+                    seriesAdapter.submitList(limited)
+                    progressBar.gone()
+                    if (limited.isEmpty()) {
+                        tvEmpty.text = "No series found"
+                        tvEmpty.visible()
+                    } else {
+                        tvEmpty.gone()
+                        categoryAdapter.setSelected(0)
+                    }
                 } else {
-                    tvEmpty.gone()
+                    seriesAdapter.submitList(series)
+                    progressBar.gone()
+                    if (series.isEmpty()) {
+                        tvEmpty.text = "No series found"
+                        tvEmpty.visible()
+                    } else {
+                        tvEmpty.gone()
+                    }
                 }
             } catch (e: Exception) {
                 android.util.Log.e("VeltrixTV", "SeriesFragment load error", e)

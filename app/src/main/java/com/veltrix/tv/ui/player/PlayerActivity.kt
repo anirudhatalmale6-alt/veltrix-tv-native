@@ -54,6 +54,10 @@ class PlayerActivity : AppCompatActivity() {
         const val EXTRA_CONTAINER_EXT = "container_ext"
         private const val OVERLAY_HIDE_DELAY = 5000L
         private const val PROGRESS_UPDATE_INTERVAL = 1000L
+
+        // For mini-player communication back to MainActivity
+        var pendingMiniPlayerUrl: String? = null
+        var pendingMiniPlayerName: String? = null
     }
 
     private lateinit var playerView: PlayerView
@@ -166,8 +170,8 @@ class PlayerActivity : AppCompatActivity() {
             tvDuration.gone()
         }
 
-        // Hide PiP button on old Android versions
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+        // PiP/mini-player button: always show for live TV (mini-player), hide on old Android for VOD
+        if (streamType != "live" && Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
             btnPip.gone()
         }
 
@@ -214,7 +218,12 @@ class PlayerActivity : AppCompatActivity() {
         }
 
         btnPip.setOnClickListener {
-            enterPipMode()
+            if (streamType == "live") {
+                // For live TV: minimize to mini-player in MainActivity
+                minimizeToMiniPlayer()
+            } else {
+                enterPipMode()
+            }
         }
 
         seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
@@ -390,6 +399,15 @@ class PlayerActivity : AppCompatActivity() {
                 }
             }
         }
+    }
+
+    private fun minimizeToMiniPlayer() {
+        // Stop our player, set pending mini-player data, and go back to MainActivity
+        player?.release()
+        player = null
+        pendingMiniPlayerUrl = streamUrl
+        pendingMiniPlayerName = channelName
+        finish()
     }
 
     private fun initPlayer() {

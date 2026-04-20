@@ -19,6 +19,7 @@ import com.veltrix.tv.data.api.XtreamApiService
 import com.veltrix.tv.ui.favorites.FavoritesFragment
 import com.veltrix.tv.ui.history.HistoryFragment
 import com.veltrix.tv.ui.live.LiveFragment
+import com.veltrix.tv.ui.player.PlayerActivity
 import com.veltrix.tv.ui.search.SearchFragment
 import com.veltrix.tv.ui.series.SeriesFragment
 import com.veltrix.tv.ui.settings.SettingsFragment
@@ -304,6 +305,18 @@ class MainActivity : AppCompatActivity() {
 
     fun isMiniPlayerVisible(): Boolean {
         return miniPlayerContainer.visibility == android.view.View.VISIBLE
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // Check if PlayerActivity requested a mini-player
+        val url = PlayerActivity.pendingMiniPlayerUrl
+        val name = PlayerActivity.pendingMiniPlayerName
+        if (url != null && name != null) {
+            PlayerActivity.pendingMiniPlayerUrl = null
+            PlayerActivity.pendingMiniPlayerName = null
+            startMiniPlayer(url, name)
+        }
     }
 
     override fun onDestroy() {
