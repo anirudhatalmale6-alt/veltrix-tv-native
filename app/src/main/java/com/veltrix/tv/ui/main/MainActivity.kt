@@ -10,8 +10,12 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
 import androidx.media3.common.MediaItem
+import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
+import androidx.media3.datasource.DefaultHttpDataSource
+import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.ui.PlayerView
 import com.veltrix.tv.R
 import com.veltrix.tv.data.PrefsManager
@@ -42,6 +46,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var tvMiniChannelName: TextView
     private lateinit var btnCloseMiniPlayer: ImageButton
     private var miniPlayer: ExoPlayer? = null
+    private val handler = android.os.Handler(android.os.Looper.getMainLooper())
     private var currentContentFragment: Fragment? = null
     private var exitConfirmed = false
 
@@ -278,15 +283,60 @@ class MainActivity : AppCompatActivity() {
     }
 
     // Mini player methods
+    private var miniPlayerUrl: String = ""
+
     fun startMiniPlayer(streamUrl: String, channelName: String) {
         try {
             closeMiniPlayer()
-            miniPlayer = ExoPlayer.Builder(this).build().also {
+            miniPlayerUrl = streamUrl
+
+            // Use larger buffer and long timeouts for mini-player too
+            val loadControl = DefaultLoadControl.Builder()
+                .setBufferDurationsMs(60_000, 120_000, 5_000, 10_000)
+                .build()
+            val httpDataSourceFactory = DefaultHttpDataSource.Factory()
+                .setConnectTimeoutMs(30_000)
+                .setReadTimeoutMs(60_000)
+                .setAllowCrossProtocolRedirects(true)
+            val mediaSourceFactory = DefaultMediaSourceFactory(httpDataSourceFactory)
+
+            miniPlayer = ExoPlayer.Builder(this)
+                .setLoadControl(loadControl)
+                .setMediaSourceFactory(mediaSourceFactory)
+                .build().also {
                 miniPlayerView.player = it
                 val mediaItem = MediaItem.fromUri(Uri.parse(streamUrl))
                 it.setMediaItem(mediaItem)
                 it.prepare()
                 it.playWhenReady = true
+
+                // Auto-reconnect mini-player on errors
+                it.addListener(object : Player.Listener {
+                    override fun onPlayerError(error: PlaybackException) {
+                        debug("Mini player error, reconnecting: ${error.errorCodeName}")
+                        handler.postDelayed({
+                            miniPlayer?.let { mp ->
+                                mp.clearMediaItems()
+                                mp.setMediaItem(MediaItem.fromUri(Uri.parse(miniPlayerUrl)))
+                                mp.prepare()
+                                mp.playWhenReady = true
+                            }
+                        }, 3000)
+                    }
+                    override fun onPlaybackStateChanged(state: Int) {
+                        if (state == Player.STATE_ENDED) {
+                            // Live stream ended, reconnect
+                            handler.postDelayed({
+                                miniPlayer?.let { mp ->
+                                    mp.clearMediaItems()
+                                    mp.setMediaItem(MediaItem.fromUri(Uri.parse(miniPlayerUrl)))
+                                    mp.prepare()
+                                    mp.playWhenReady = true
+                                }
+                            }, 1000)
+                        }
+                    }
+                })
             }
             tvMiniChannelName.text = channelName
             miniPlayerContainer.visibility = android.view.View.VISIBLE

@@ -24,7 +24,10 @@ import androidx.media3.common.MimeTypes
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.TrackSelectionOverride
+import androidx.media3.datasource.DefaultHttpDataSource
+import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.ui.PlayerView
 import com.veltrix.tv.R
 import com.veltrix.tv.data.ChannelListHolder
@@ -410,9 +413,35 @@ class PlayerActivity : AppCompatActivity() {
         finish()
     }
 
+    private var retryCount = 0
+    private val maxRetries = 3
+    private val retryDelayMs = 3000L
+
     private fun initPlayer() {
         try {
-            player = ExoPlayer.Builder(this).build().also {
+            // Configure larger buffers to prevent stream cutting off
+            val loadControl = DefaultLoadControl.Builder()
+                .setBufferDurationsMs(
+                    60_000,   // min buffer: 60s (default 15s)
+                    120_000,  // max buffer: 120s (default 50s)
+                    5_000,    // buffer for playback: 5s (default 2.5s)
+                    10_000    // buffer for rebuffer: 10s (default 5s)
+                )
+                .build()
+
+            // Configure HTTP data source with long timeouts for IPTV
+            val httpDataSourceFactory = DefaultHttpDataSource.Factory()
+                .setConnectTimeoutMs(30_000)
+                .setReadTimeoutMs(60_000)
+                .setAllowCrossProtocolRedirects(true)
+                .setKeepPostFor302Redirects(true)
+
+            val mediaSourceFactory = DefaultMediaSourceFactory(httpDataSourceFactory)
+
+            player = ExoPlayer.Builder(this)
+                .setLoadControl(loadControl)
+                .setMediaSourceFactory(mediaSourceFactory)
+                .build().also {
                 playerView.player = it
 
                 // Enable subtitle rendering
@@ -431,6 +460,7 @@ class PlayerActivity : AppCompatActivity() {
                             Player.STATE_READY -> {
                                 progressBar.gone()
                                 tvError.gone()
+                                retryCount = 0  // Reset retry counter on success
                                 updatePlayPauseIcon()
                                 if (resumePosition > 0) {
                                     it.seekTo(resumePosition)
@@ -439,7 +469,9 @@ class PlayerActivity : AppCompatActivity() {
                             }
                             Player.STATE_ENDED -> {
                                 if (streamType == "live") {
-                                    playStream(streamUrl)
+                                    // Auto-reconnect for live streams
+                                    android.util.Log.d("VeltrixTV", "Live stream ended, reconnecting...")
+                                    handler.postDelayed({ playStream(streamUrl) }, 1000)
                                 } else {
                                     saveWatchProgress()
                                     finish()
@@ -450,9 +482,26 @@ class PlayerActivity : AppCompatActivity() {
                     }
 
                     override fun onPlayerError(error: PlaybackException) {
-                        progressBar.gone()
-                        tvError.visible()
-                        tvError.text = getString(R.string.player_error)
+                        android.util.Log.e("VeltrixTV", "Player error: ${error.errorCodeName}", error)
+                        if (streamType == "live" && retryCount < maxRetries) {
+                            // Auto-retry for live streams
+                            retryCount++
+                            tvError.text = "Reconnecting... ($retryCount/$maxRetries)"
+                            tvError.visible()
+                            progressBar.visible()
+                            handler.postDelayed({
+                                player?.clearMediaItems()
+                                playStream(streamUrl)
+                            }, retryDelayMs)
+                        } else {
+                            progressBar.gone()
+                            tvError.visible()
+                            tvError.text = if (retryCount >= maxRetries) {
+                                "Stream lost. Press OK to retry."
+                            } else {
+                                getString(R.string.player_error)
+                            }
+                        }
                     }
                 })
             }
@@ -525,8 +574,15 @@ class PlayerActivity : AppCompatActivity() {
         return when (keyCode) {
             KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER,
             KeyEvent.KEYCODE_NUMPAD_ENTER, KeyEvent.KEYCODE_SPACE -> {
-                if (!isOverlayVisible) {
+                // If stream died and user presses OK, retry
+                if (retryCount >= maxRetries && streamType == "live") {
+                    retryCount = 0
+                    tvError.gone()
+                    playStream(streamUrl)
+                    true
+                } else if (!isOverlayVisible) {
                     showOverlay()
+                    true
                 } else {
                     if (streamType != "live") {
                         player?.let {
@@ -535,8 +591,8 @@ class PlayerActivity : AppCompatActivity() {
                         }
                     }
                     resetOverlayTimer()
+                    true
                 }
-                true
             }
             KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE, KeyEvent.KEYCODE_MEDIA_PLAY,
             KeyEvent.KEYCODE_MEDIA_PAUSE -> {
