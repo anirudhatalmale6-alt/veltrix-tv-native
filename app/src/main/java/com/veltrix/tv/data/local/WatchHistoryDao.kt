@@ -30,6 +30,9 @@ interface WatchHistoryDao {
     @Query("DELETE FROM watch_history WHERE id = :id")
     suspend fun deleteById(id: Long)
 
+    @Query("DELETE FROM watch_history WHERE streamId = :streamId")
+    suspend fun deleteByStreamId(streamId: Int)
+
     @Query("DELETE FROM watch_history")
     suspend fun deleteAll()
 
