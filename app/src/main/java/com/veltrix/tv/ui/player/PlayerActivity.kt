@@ -435,6 +435,7 @@ class PlayerActivity : AppCompatActivity() {
                 .setReadTimeoutMs(60_000)
                 .setAllowCrossProtocolRedirects(true)
                 .setKeepPostFor302Redirects(true)
+                .setUserAgent("VeltrixTV/1.0 (Android TV; ExoPlayer)")
 
             val mediaSourceFactory = DefaultMediaSourceFactory(httpDataSourceFactory)
 
@@ -443,6 +444,9 @@ class PlayerActivity : AppCompatActivity() {
                 .setMediaSourceFactory(mediaSourceFactory)
                 .build().also {
                 playerView.player = it
+
+                // Keep device awake during playback to prevent stream cutoff
+                it.setWakeMode(C.WAKE_MODE_NETWORK)
 
                 // Enable subtitle rendering
                 it.trackSelectionParameters = it.trackSelectionParameters
@@ -627,7 +631,11 @@ class PlayerActivity : AppCompatActivity() {
                 }
             }
             KeyEvent.KEYCODE_DPAD_LEFT -> {
-                if (streamType != "live") {
+                if (isControlsVisible) {
+                    // Let focus navigate between buttons when controls are showing
+                    super.onKeyDown(keyCode, event)
+                } else if (streamType != "live") {
+                    // Seek back 10s when controls are hidden (movies/series only)
                     player?.let {
                         val pos = (it.currentPosition - 10000).coerceAtLeast(0)
                         it.seekTo(pos)
@@ -635,11 +643,16 @@ class PlayerActivity : AppCompatActivity() {
                     showOverlay()
                     true
                 } else {
-                    super.onKeyDown(keyCode, event)
+                    showOverlay()
+                    true
                 }
             }
             KeyEvent.KEYCODE_DPAD_RIGHT -> {
-                if (streamType != "live") {
+                if (isControlsVisible) {
+                    // Let focus navigate between buttons when controls are showing
+                    super.onKeyDown(keyCode, event)
+                } else if (streamType != "live") {
+                    // Seek forward 10s when controls are hidden (movies/series only)
                     player?.let {
                         val pos = (it.currentPosition + 10000).coerceAtMost(it.duration)
                         it.seekTo(pos)
@@ -647,7 +660,8 @@ class PlayerActivity : AppCompatActivity() {
                     showOverlay()
                     true
                 } else {
-                    super.onKeyDown(keyCode, event)
+                    showOverlay()
+                    true
                 }
             }
             KeyEvent.KEYCODE_MEDIA_REWIND -> {

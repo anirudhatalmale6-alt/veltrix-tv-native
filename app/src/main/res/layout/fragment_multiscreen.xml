@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/black">
+
+    <!-- Top row: 2 players -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="horizontal">
+
+        <!-- Player 1 -->
+        <FrameLayout
+            android:id="@+id/player1Container"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:layout_margin="2dp"
+            android:background="#1A1A2E">
+
+            <androidx.media3.ui.PlayerView
+                android:id="@+id/playerView1"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                app:use_controller="false"
+                app:surface_type="texture_view" />
+
+            <TextView
+                android:id="@+id/tvChannel1"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom"
+                android:background="#AA000000"
+                android:padding="6dp"
+                android:text="1 - Press OK to select"
+                android:textColor="@color/white"
+                android:textSize="12sp"
+                android:maxLines="1"
+                android:ellipsize="end" />
+
+            <View
+                android:id="@+id/focusBorder1"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@android:color/transparent"
+                android:focusable="true"
+                android:focusableInTouchMode="true" />
+        </FrameLayout>
+
+        <!-- Player 2 -->
+        <FrameLayout
+            android:id="@+id/player2Container"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:layout_margin="2dp"
+            android:background="#1A1A2E">
+
+            <androidx.media3.ui.PlayerView
+                android:id="@+id/playerView2"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                app:use_controller="false"
+                app:surface_type="texture_view" />
+
+            <TextView
+                android:id="@+id/tvChannel2"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom"
+                android:background="#AA000000"
+                android:padding="6dp"
+                android:text="2 - Press OK to select"
+                android:textColor="@color/white"
+                android:textSize="12sp"
+                android:maxLines="1"
+                android:ellipsize="end" />
+
+            <View
+                android:id="@+id/focusBorder2"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@android:color/transparent"
+                android:focusable="true"
+                android:focusableInTouchMode="true" />
+        </FrameLayout>
+
+    </LinearLayout>
+
+    <!-- Bottom row: 2 players -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="horizontal">
+
+        <!-- Player 3 -->
+        <FrameLayout
+            android:id="@+id/player3Container"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:layout_margin="2dp"
+            android:background="#1A1A2E">
+
+            <androidx.media3.ui.PlayerView
+                android:id="@+id/playerView3"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                app:use_controller="false"
+                app:surface_type="texture_view" />
+
+            <TextView
+                android:id="@+id/tvChannel3"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom"
+                android:background="#AA000000"
+                android:padding="6dp"
+                android:text="3 - Press OK to select"
+                android:textColor="@color/white"
+                android:textSize="12sp"
+                android:maxLines="1"
+                android:ellipsize="end" />
+
+            <View
+                android:id="@+id/focusBorder3"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@android:color/transparent"
+                android:focusable="true"
+                android:focusableInTouchMode="true" />
+        </FrameLayout>
+
+        <!-- Player 4 -->
+        <FrameLayout
+            android:id="@+id/player4Container"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:layout_margin="2dp"
+            android:background="#1A1A2E">
+
+            <androidx.media3.ui.PlayerView
+                android:id="@+id/playerView4"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                app:use_controller="false"
+                app:surface_type="texture_view" />
+
+            <TextView
+                android:id="@+id/tvChannel4"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="bottom"
+                android:background="#AA000000"
+                android:padding="6dp"
+                android:text="4 - Press OK to select"
+                android:textColor="@color/white"
+                android:textSize="12sp"
+                android:maxLines="1"
+                android:ellipsize="end" />
+
+            <View
+                android:id="@+id/focusBorder4"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@android:color/transparent"
+                android:focusable="true"
+                android:focusableInTouchMode="true" />
+        </FrameLayout>
+
+    </LinearLayout>
+
+</LinearLayout>

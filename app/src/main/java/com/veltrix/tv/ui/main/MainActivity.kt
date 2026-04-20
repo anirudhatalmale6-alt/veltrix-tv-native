@@ -9,6 +9,7 @@ import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
+import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
@@ -23,6 +24,7 @@ import com.veltrix.tv.data.api.XtreamApiService
 import com.veltrix.tv.ui.favorites.FavoritesFragment
 import com.veltrix.tv.ui.history.HistoryFragment
 import com.veltrix.tv.ui.live.LiveFragment
+import com.veltrix.tv.ui.multiscreen.MultiScreenFragment
 import com.veltrix.tv.ui.player.PlayerActivity
 import com.veltrix.tv.ui.search.SearchFragment
 import com.veltrix.tv.ui.series.SeriesFragment
@@ -137,6 +139,7 @@ class MainActivity : AppCompatActivity() {
                 SidebarFragment.ID_MOVIES -> VodFragment()
                 SidebarFragment.ID_SERIES -> SeriesFragment()
                 SidebarFragment.ID_SEARCH -> SearchFragment()
+                SidebarFragment.ID_MULTISCREEN -> MultiScreenFragment()
                 SidebarFragment.ID_HISTORY -> HistoryFragment()
                 SidebarFragment.ID_FAVORITES -> FavoritesFragment()
                 SidebarFragment.ID_SETTINGS -> SettingsFragment()
@@ -298,6 +301,7 @@ class MainActivity : AppCompatActivity() {
                 .setConnectTimeoutMs(30_000)
                 .setReadTimeoutMs(60_000)
                 .setAllowCrossProtocolRedirects(true)
+                .setUserAgent("VeltrixTV/1.0 (Android TV; ExoPlayer)")
             val mediaSourceFactory = DefaultMediaSourceFactory(httpDataSourceFactory)
 
             miniPlayer = ExoPlayer.Builder(this)
@@ -305,6 +309,7 @@ class MainActivity : AppCompatActivity() {
                 .setMediaSourceFactory(mediaSourceFactory)
                 .build().also {
                 miniPlayerView.player = it
+                it.setWakeMode(C.WAKE_MODE_NETWORK)
                 val mediaItem = MediaItem.fromUri(Uri.parse(streamUrl))
                 it.setMediaItem(mediaItem)
                 it.prepare()

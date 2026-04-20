@@ -21,9 +21,10 @@ class SidebarFragment : Fragment() {
         const val ID_MOVIES = 1
         const val ID_SERIES = 2
         const val ID_SEARCH = 3
-        const val ID_HISTORY = 4
-        const val ID_FAVORITES = 5
-        const val ID_SETTINGS = 6
+        const val ID_MULTISCREEN = 4
+        const val ID_HISTORY = 5
+        const val ID_FAVORITES = 6
+        const val ID_SETTINGS = 7
     }
 
     private val sidebarItems = listOf(
@@ -31,6 +32,7 @@ class SidebarFragment : Fragment() {
         SidebarItem("Movies", ID_MOVIES),
         SidebarItem("Series", ID_SERIES),
         SidebarItem("Search", ID_SEARCH),
+        SidebarItem("Multi Screen", ID_MULTISCREEN),
         SidebarItem("History", ID_HISTORY),
         SidebarItem("Favorites", ID_FAVORITES),
         SidebarItem("Settings", ID_SETTINGS)
