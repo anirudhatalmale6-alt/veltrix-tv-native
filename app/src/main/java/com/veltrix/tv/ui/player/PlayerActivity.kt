@@ -61,6 +61,8 @@ class PlayerActivity : AppCompatActivity() {
         // For mini-player communication back to MainActivity
         var pendingMiniPlayerUrl: String? = null
         var pendingMiniPlayerName: String? = null
+        // Signal to close mini-player when full player opens
+        var shouldCloseMiniPlayer = false
     }
 
     private lateinit var playerView: PlayerView
@@ -129,6 +131,8 @@ class PlayerActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Signal MainActivity to close its mini-player (prevents mixed audio)
+        shouldCloseMiniPlayer = true
         setContentView(R.layout.activity_player)
 
         playerView = findViewById(R.id.playerView)

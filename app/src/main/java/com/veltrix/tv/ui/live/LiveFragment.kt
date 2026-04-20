@@ -58,6 +58,7 @@ class LiveFragment : Fragment(), MainActivity.DpadNavigable {
     private var allStreams = listOf<LiveStream>()
     private var previewPlayer: ExoPlayer? = null
     private var currentPreviewStreamId: Int = -1
+    private var selectedStreamId: Int = -1  // Track which channel was clicked (for double-click-to-play)
 
     override fun canGoLeft(): Boolean {
         val focused = activity?.currentFocus ?: return false
@@ -110,7 +111,15 @@ class LiveFragment : Fragment(), MainActivity.DpadNavigable {
 
         channelListAdapter = ChannelListAdapter(
             onChannelClick = { stream, position ->
-                openPlayer(stream, position)
+                if (stream.streamId == selectedStreamId) {
+                    // Second click on same channel = open full screen player
+                    openPlayer(stream, position)
+                } else {
+                    // First click = update preview to this channel
+                    selectedStreamId = stream.streamId
+                    startPreview(stream)
+                    channelListAdapter.setPlaying(position)
+                }
             },
             onChannelFocus = { stream, _ ->
                 startPreview(stream)
@@ -388,9 +397,10 @@ class LiveFragment : Fragment(), MainActivity.DpadNavigable {
             // Store channel list in memory holder (avoids Binder transaction limit)
             ChannelListHolder.set(allStreams)
 
-            // Stop preview before opening full player
+            // Stop preview and mini-player before opening full player (prevents mixed audio)
             previewPlayer?.release()
             previewPlayer = null
+            (activity as? MainActivity)?.closeMiniPlayer()
 
             val intent = Intent(requireContext(), PlayerActivity::class.java).apply {
                 putExtra(PlayerActivity.EXTRA_STREAM_URL, streamUrl)

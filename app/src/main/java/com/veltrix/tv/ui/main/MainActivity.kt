@@ -379,6 +379,15 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    override fun onPause() {
+        super.onPause()
+        // When leaving to PlayerActivity, close mini-player to prevent mixed audio
+        if (PlayerActivity.shouldCloseMiniPlayer) {
+            PlayerActivity.shouldCloseMiniPlayer = false
+            closeMiniPlayer()
+        }
+    }
+
     override fun onDestroy() {
         super.onDestroy()
         closeMiniPlayer()
