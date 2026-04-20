@@ -28,9 +28,11 @@ import com.veltrix.tv.util.loadImage
 import com.veltrix.tv.util.visible
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 
 class SearchFragment : Fragment() {
 
@@ -86,50 +88,64 @@ class SearchFragment : Fragment() {
 
         loadJob = viewLifecycleOwner.lifecycleScope.launch {
             try {
-                // Load all live, vod, series in parallel
-                val liveDeferred = withContext(Dispatchers.IO) {
-                    try {
-                        MainActivity.apiService.getLiveStreams(prefs.username, prefs.password)
-                    } catch (e: Exception) {
-                        android.util.Log.e("VeltrixTV", "Search: live load error", e)
-                        emptyList()
-                    }
+                // Load all three in PARALLEL with 30s timeout each
+                val liveJob = async(Dispatchers.IO) {
+                    withTimeoutOrNull(30_000) {
+                        try {
+                            MainActivity.apiService.getLiveStreams(prefs.username, prefs.password)
+                        } catch (e: Exception) {
+                            android.util.Log.e("VeltrixTV", "Search: live load error", e)
+                            null
+                        }
+                    } ?: emptyList()
                 }
-                cachedLive = liveDeferred
-                android.util.Log.d("VeltrixTV", "Search: loaded ${cachedLive.size} live channels")
 
-                val vodDeferred = withContext(Dispatchers.IO) {
-                    try {
-                        MainActivity.apiService.getVodStreams(prefs.username, prefs.password)
-                    } catch (e: Exception) {
-                        android.util.Log.e("VeltrixTV", "Search: vod load error", e)
-                        emptyList()
-                    }
+                val vodJob = async(Dispatchers.IO) {
+                    withTimeoutOrNull(30_000) {
+                        try {
+                            MainActivity.apiService.getVodStreams(prefs.username, prefs.password)
+                        } catch (e: Exception) {
+                            android.util.Log.e("VeltrixTV", "Search: vod load error", e)
+                            null
+                        }
+                    } ?: emptyList()
                 }
-                cachedVod = vodDeferred
-                android.util.Log.d("VeltrixTV", "Search: loaded ${cachedVod.size} movies")
 
-                val seriesDeferred = withContext(Dispatchers.IO) {
-                    try {
-                        MainActivity.apiService.getSeries(prefs.username, prefs.password)
-                    } catch (e: Exception) {
-                        android.util.Log.e("VeltrixTV", "Search: series load error", e)
-                        emptyList()
-                    }
+                val seriesJob = async(Dispatchers.IO) {
+                    withTimeoutOrNull(30_000) {
+                        try {
+                            MainActivity.apiService.getSeries(prefs.username, prefs.password)
+                        } catch (e: Exception) {
+                            android.util.Log.e("VeltrixTV", "Search: series load error", e)
+                            null
+                        }
+                    } ?: emptyList()
                 }
-                cachedSeries = seriesDeferred
-                android.util.Log.d("VeltrixTV", "Search: loaded ${cachedSeries.size} series")
+
+                // Wait for all three to complete
+                cachedLive = liveJob.await()
+                cachedVod = vodJob.await()
+                cachedSeries = seriesJob.await()
+
+                android.util.Log.d("VeltrixTV", "Search: loaded ${cachedLive.size} live, ${cachedVod.size} vod, ${cachedSeries.size} series")
 
                 isDataLoaded = true
+                if (!isAdded) return@launch
                 progressBar.gone()
 
-                val total = cachedLive.size + cachedVod.size + cachedSeries.size
                 tvEmpty.text = "Search ${cachedLive.size} channels, ${cachedVod.size} movies, ${cachedSeries.size} series"
                 tvEmpty.visible()
             } catch (e: Exception) {
                 android.util.Log.e("VeltrixTV", "Search preload error", e)
+                // Still mark as loaded so user can search whatever was loaded
+                isDataLoaded = true
+                if (!isAdded) return@launch
                 progressBar.gone()
-                tvEmpty.text = "Error loading data: ${e.message}"
+                if (cachedLive.isEmpty() && cachedVod.isEmpty() && cachedSeries.isEmpty()) {
+                    tvEmpty.text = "Error loading data. Try again later."
+                } else {
+                    tvEmpty.text = "Search ${cachedLive.size} channels, ${cachedVod.size} movies, ${cachedSeries.size} series"
+                }
                 tvEmpty.visible()
             }
         }
