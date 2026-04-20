@@ -64,4 +64,12 @@ interface XtreamApiService {
         @Query("action") action: String = "get_series_info",
         @Query("series_id") seriesId: Int
     ): SeriesInfo
+
+    @GET("player_api.php")
+    suspend fun getShortEpg(
+        @Query("username") username: String,
+        @Query("password") password: String,
+        @Query("action") action: String = "get_short_epg",
+        @Query("stream_id") streamId: Int
+    ): EpgResponse
 }

@@ -70,6 +70,13 @@ class PlayerActivity : AppCompatActivity() {
     private lateinit var progressBar: ProgressBar
     private lateinit var tvError: TextView
 
+    // Stream info badges
+    private lateinit var tvInfoResolution: TextView
+    private lateinit var tvInfoCodec: TextView
+    private lateinit var tvInfoAudio: TextView
+    private lateinit var tvInfoSubtitle: TextView
+    private lateinit var tvInfoFps: TextView
+
     // On-screen controls
     private lateinit var controlsOverlay: LinearLayout
     private lateinit var btnPlayPause: ImageButton
@@ -129,6 +136,13 @@ class PlayerActivity : AppCompatActivity() {
         tvChannelCategory = findViewById(R.id.tvChannelCategory)
         progressBar = findViewById(R.id.progressBar)
         tvError = findViewById(R.id.tvError)
+
+        // Stream info badges
+        tvInfoResolution = findViewById(R.id.tvInfoResolution)
+        tvInfoCodec = findViewById(R.id.tvInfoCodec)
+        tvInfoAudio = findViewById(R.id.tvInfoAudio)
+        tvInfoSubtitle = findViewById(R.id.tvInfoSubtitle)
+        tvInfoFps = findViewById(R.id.tvInfoFps)
 
         // On-screen controls
         controlsOverlay = findViewById(R.id.controlsOverlay)
@@ -257,6 +271,108 @@ class PlayerActivity : AppCompatActivity() {
             if (isPlaying) R.drawable.ic_pause
             else R.drawable.ic_play
         )
+    }
+
+    private fun updateStreamInfoBadges() {
+        try {
+            val p = player ?: return
+
+            // Resolution badge (e.g., "1920x1080", "HD", "4K")
+            val videoFormat = p.videoFormat
+            if (videoFormat != null) {
+                val w = videoFormat.width
+                val h = videoFormat.height
+                val label = when {
+                    h >= 2160 -> "4K"
+                    h >= 1080 -> "FHD $w×$h"
+                    h >= 720 -> "HD $w×$h"
+                    h >= 480 -> "SD $w×$h"
+                    w > 0 && h > 0 -> "${w}×${h}"
+                    else -> null
+                }
+                if (label != null) {
+                    tvInfoResolution.text = label
+                    tvInfoResolution.visible()
+                }
+
+                // Video codec badge
+                val codec = videoFormat.codecs ?: videoFormat.sampleMimeType?.let { mime ->
+                    when {
+                        mime.contains("hevc") || mime.contains("h265") || mime.contains("hev1") -> "HEVC"
+                        mime.contains("avc") || mime.contains("h264") -> "H.264"
+                        mime.contains("av01") -> "AV1"
+                        mime.contains("vp9") -> "VP9"
+                        else -> mime.substringAfterLast("/").uppercase()
+                    }
+                }
+                if (codec != null) {
+                    val codecLabel = when {
+                        codec.startsWith("hev1") || codec.startsWith("hvc1") -> "HEVC"
+                        codec.startsWith("avc1") -> "H.264"
+                        codec.startsWith("av01") -> "AV1"
+                        codec.startsWith("vp09") -> "VP9"
+                        else -> codec.uppercase()
+                    }
+                    tvInfoCodec.text = codecLabel
+                    tvInfoCodec.visible()
+                }
+
+                // FPS badge
+                val fps = videoFormat.frameRate
+                if (fps > 0) {
+                    tvInfoFps.text = "${fps.toInt()}fps"
+                    tvInfoFps.visible()
+                }
+            }
+
+            // Audio badge (language + channels)
+            val audioFormat = p.audioFormat
+            if (audioFormat != null) {
+                val lang = audioFormat.language?.uppercase() ?: ""
+                val channels = when (audioFormat.channelCount) {
+                    1 -> "Mono"
+                    2 -> "Stereo"
+                    6 -> "5.1"
+                    8 -> "7.1"
+                    else -> if (audioFormat.channelCount > 0) "${audioFormat.channelCount}ch" else ""
+                }
+                val audioCodec = audioFormat.sampleMimeType?.let { mime ->
+                    when {
+                        mime.contains("ac3") || mime.contains("eac3") -> "AC3"
+                        mime.contains("aac") -> "AAC"
+                        mime.contains("mp3") || mime.contains("mpeg") -> "MP3"
+                        mime.contains("opus") -> "Opus"
+                        mime.contains("dts") -> "DTS"
+                        else -> ""
+                    }
+                } ?: ""
+                val parts = listOfNotNull(
+                    lang.ifEmpty { null },
+                    audioCodec.ifEmpty { null },
+                    channels.ifEmpty { null }
+                )
+                if (parts.isNotEmpty()) {
+                    tvInfoAudio.text = parts.joinToString(" ")
+                    tvInfoAudio.visible()
+                }
+            }
+
+            // Subtitle badge
+            val tracks = p.currentTracks
+            val hasSubtitles = tracks.groups.any { it.type == C.TRACK_TYPE_TEXT && it.length > 0 }
+            if (hasSubtitles) {
+                val selectedSub = tracks.groups.firstOrNull { group ->
+                    group.type == C.TRACK_TYPE_TEXT && (0 until group.length).any { group.isTrackSelected(it) }
+                }
+                if (selectedSub != null) {
+                    val fmt = selectedSub.getTrackFormat(0)
+                    tvInfoSubtitle.text = "CC: ${fmt.language?.uppercase() ?: "ON"}"
+                } else {
+                    tvInfoSubtitle.text = "CC"
+                }
+                tvInfoSubtitle.visible()
+            }
+        } catch (_: Exception) {}
     }
 
     private fun showSubtitleDialog() {
@@ -466,6 +582,7 @@ class PlayerActivity : AppCompatActivity() {
                                 tvError.gone()
                                 retryCount = 0  // Reset retry counter on success
                                 updatePlayPauseIcon()
+                                updateStreamInfoBadges()
                                 if (resumePosition > 0) {
                                     it.seekTo(resumePosition)
                                     resumePosition = 0
