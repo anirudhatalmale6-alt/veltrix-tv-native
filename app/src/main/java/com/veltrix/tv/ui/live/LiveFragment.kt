@@ -205,7 +205,7 @@ class LiveFragment : Fragment(), MainActivity.DpadNavigable {
             .setMediaSourceFactory(mediaSourceFactory)
             .build().also { player ->
                 previewPlayerView.player = player
-                player.volume = 0f // Mute preview
+                player.volume = 1f // Preview with audio
                 player.setWakeMode(C.WAKE_MODE_NETWORK)
 
                 player.addListener(object : Player.Listener {
