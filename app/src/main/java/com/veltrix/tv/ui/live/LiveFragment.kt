@@ -168,8 +168,9 @@ class LiveFragment : Fragment(), MainActivity.DpadNavigable {
                 categoryAdapter.setSelected(if (categories.isNotEmpty()) 1 else 0)
                 loadStreams(firstCategoryId)
             } catch (e: Exception) {
+                android.util.Log.e("VeltrixTV", "loadCategories error", e)
                 progressBar.gone()
-                tvEmpty.text = getString(R.string.error_loading)
+                tvEmpty.text = "Error: ${e.message}"
                 tvEmpty.visible()
             }
         }
@@ -203,8 +204,9 @@ class LiveFragment : Fragment(), MainActivity.DpadNavigable {
                     tvEmpty.gone()
                 }
             } catch (e: Exception) {
+                android.util.Log.e("VeltrixTV", "loadStreams error cat=$categoryId", e)
                 progressBar.gone()
-                tvEmpty.text = getString(R.string.error_loading)
+                tvEmpty.text = "Error: ${e.message}"
                 tvEmpty.visible()
             }
         }

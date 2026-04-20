@@ -24,6 +24,7 @@ import com.veltrix.tv.ui.series.SeriesFragment
 import com.veltrix.tv.ui.settings.SettingsFragment
 import com.veltrix.tv.ui.vod.VodFragment
 import okhttp3.OkHttpClient
+import com.google.gson.GsonBuilder
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
@@ -83,18 +84,28 @@ class MainActivity : AppCompatActivity() {
 
     private fun initApi() {
         val baseUrl = prefs.getBaseUrl().trimEnd('/') + "/"
-        val cacheDir = java.io.File(cacheDir, "http_cache")
-        val cache = okhttp3.Cache(cacheDir, 50L * 1024 * 1024) // 50MB cache
+        // Clear any old HTTP cache that may serve stale responses
+        try {
+            val oldCacheDir = java.io.File(cacheDir, "http_cache")
+            if (oldCacheDir.exists()) oldCacheDir.deleteRecursively()
+        } catch (_: Exception) {}
         val client = OkHttpClient.Builder()
-            .cache(cache)
             .connectTimeout(30, TimeUnit.SECONDS)
-            .readTimeout(30, TimeUnit.SECONDS)
+            .readTimeout(60, TimeUnit.SECONDS)
+            .addInterceptor { chain ->
+                // Force fresh requests - no caching for IPTV API
+                val request = chain.request().newBuilder()
+                    .header("Cache-Control", "no-cache, no-store")
+                    .build()
+                chain.proceed(request)
+            }
             .build()
 
+        val gson = GsonBuilder().setLenient().create()
         apiService = Retrofit.Builder()
             .baseUrl(baseUrl)
             .client(client)
-            .addConverterFactory(GsonConverterFactory.create())
+            .addConverterFactory(GsonConverterFactory.create(gson))
             .build()
             .create(XtreamApiService::class.java)
     }

@@ -162,8 +162,9 @@ class VodFragment : Fragment(), MainActivity.DpadNavigable {
                 categoryAdapter.setSelected(if (categories.isNotEmpty()) 1 else 0)
                 loadMovies(firstCategoryId)
             } catch (e: Exception) {
+                android.util.Log.e("VeltrixTV", "VodFragment load error", e)
                 progressBar.gone()
-                tvEmpty.text = getString(R.string.error_loading)
+                tvEmpty.text = "Error: ${e.message}"
                 tvEmpty.visible()
             }
         }
@@ -196,8 +197,9 @@ class VodFragment : Fragment(), MainActivity.DpadNavigable {
                     tvEmpty.gone()
                 }
             } catch (e: Exception) {
+                android.util.Log.e("VeltrixTV", "VodFragment load error", e)
                 progressBar.gone()
-                tvEmpty.text = getString(R.string.error_loading)
+                tvEmpty.text = "Error: ${e.message}"
                 tvEmpty.visible()
             }
         }

@@ -155,8 +155,9 @@ class SeriesFragment : Fragment(), MainActivity.DpadNavigable {
                 categoryAdapter.setSelected(if (categories.isNotEmpty()) 1 else 0)
                 loadSeries(firstCategoryId)
             } catch (e: Exception) {
+                android.util.Log.e("VeltrixTV", "SeriesFragment load error", e)
                 progressBar.gone()
-                tvEmpty.text = getString(R.string.error_loading)
+                tvEmpty.text = "Error: ${e.message}"
                 tvEmpty.visible()
             }
         }
@@ -189,8 +190,9 @@ class SeriesFragment : Fragment(), MainActivity.DpadNavigable {
                     tvEmpty.gone()
                 }
             } catch (e: Exception) {
+                android.util.Log.e("VeltrixTV", "SeriesFragment load error", e)
                 progressBar.gone()
-                tvEmpty.text = getString(R.string.error_loading)
+                tvEmpty.text = "Error: ${e.message}"
                 tvEmpty.visible()
             }
         }
