@@ -20,6 +20,7 @@ import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.ui.PlayerView
 import com.veltrix.tv.R
 import com.veltrix.tv.data.PrefsManager
+import com.veltrix.tv.data.SearchDataCache
 import com.veltrix.tv.data.api.XtreamApiService
 import com.veltrix.tv.ui.favorites.FavoritesFragment
 import com.veltrix.tv.ui.history.HistoryFragment
@@ -30,6 +31,11 @@ import com.veltrix.tv.ui.search.SearchFragment
 import com.veltrix.tv.ui.series.SeriesFragment
 import com.veltrix.tv.ui.settings.SettingsFragment
 import com.veltrix.tv.ui.vod.VodFragment
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import okhttp3.OkHttpClient
 import com.google.gson.GsonBuilder
 import retrofit2.Retrofit
@@ -61,6 +67,8 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Keep screen on while app is running (prevents screen going black after idle)
+        window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         setContentView(R.layout.activity_main)
 
         prefs = PrefsManager.getInstance(this)
@@ -81,6 +89,7 @@ class MainActivity : AppCompatActivity() {
 
         initApi()
         setupSidebar()
+        preloadSearchData()
         debug("Ready. Use remote to navigate.")
     }
 
@@ -116,6 +125,44 @@ class MainActivity : AppCompatActivity() {
             .addConverterFactory(GsonConverterFactory.create(gson))
             .build()
             .create(XtreamApiService::class.java)
+    }
+
+    private fun preloadSearchData() {
+        if (SearchDataCache.isLoaded || SearchDataCache.isLoading) return
+        SearchDataCache.isLoading = true
+
+        lifecycleScope.launch {
+            try {
+                val liveJob = async(Dispatchers.IO) {
+                    withTimeoutOrNull(30_000) {
+                        try { apiService.getLiveStreams(prefs.username, prefs.password) }
+                        catch (_: Exception) { null }
+                    } ?: emptyList()
+                }
+                val vodJob = async(Dispatchers.IO) {
+                    withTimeoutOrNull(30_000) {
+                        try { apiService.getVodStreams(prefs.username, prefs.password) }
+                        catch (_: Exception) { null }
+                    } ?: emptyList()
+                }
+                val seriesJob = async(Dispatchers.IO) {
+                    withTimeoutOrNull(30_000) {
+                        try { apiService.getSeries(prefs.username, prefs.password) }
+                        catch (_: Exception) { null }
+                    } ?: emptyList()
+                }
+
+                SearchDataCache.liveStreams = liveJob.await()
+                SearchDataCache.vodStreams = vodJob.await()
+                SearchDataCache.seriesItems = seriesJob.await()
+                SearchDataCache.isLoaded = true
+                SearchDataCache.isLoading = false
+                debug("Search cache: ${SearchDataCache.liveStreams.size} live, ${SearchDataCache.vodStreams.size} vod, ${SearchDataCache.seriesItems.size} series")
+            } catch (e: Exception) {
+                SearchDataCache.isLoading = false
+                debug("Search preload error: ${e.message}")
+            }
+        }
     }
 
     private fun setupSidebar() {

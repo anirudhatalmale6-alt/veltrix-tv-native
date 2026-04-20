@@ -131,6 +131,8 @@ class PlayerActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Keep screen on during playback (prevents TV from sleeping after 7-10 min)
+        window.addFlags(android.view.WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         // Signal MainActivity to close its mini-player (prevents mixed audio)
         shouldCloseMiniPlayer = true
         setContentView(R.layout.activity_player)
