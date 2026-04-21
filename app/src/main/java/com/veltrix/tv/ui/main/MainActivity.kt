@@ -154,12 +154,19 @@ class MainActivity : AppCompatActivity() {
                     } ?: emptyList()
                 }
 
-                SearchDataCache.liveStreams = liveJob.await()
-                SearchDataCache.vodStreams = vodJob.await()
-                SearchDataCache.seriesItems = seriesJob.await()
-                SearchDataCache.isLoaded = true
+                val live = liveJob.await()
+                val vod = vodJob.await()
+                val series = seriesJob.await()
+
+                // Only mark loaded if we got at least some data
+                if (live.isNotEmpty() || vod.isNotEmpty() || series.isNotEmpty()) {
+                    SearchDataCache.liveStreams = live
+                    SearchDataCache.vodStreams = vod
+                    SearchDataCache.seriesItems = series
+                    SearchDataCache.isLoaded = true
+                }
                 SearchDataCache.isLoading = false
-                debug("Search cache: ${SearchDataCache.liveStreams.size} live, ${SearchDataCache.vodStreams.size} vod, ${SearchDataCache.seriesItems.size} series")
+                debug("Search cache: ${live.size} live, ${vod.size} vod, ${series.size} series")
             } catch (e: Exception) {
                 SearchDataCache.isLoading = false
                 debug("Search preload error: ${e.message}")
