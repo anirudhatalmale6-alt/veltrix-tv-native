@@ -88,6 +88,17 @@ class SearchFragment : Fragment() {
             cachedLive = SearchDataCache.liveStreams
             cachedVod = SearchDataCache.vodStreams
             cachedSeries = SearchDataCache.seriesItems
+
+            // If cache has gaps (vod or series empty), reload those in background
+            if (cachedVod.isEmpty() || cachedSeries.isEmpty()) {
+                isDataLoaded = true
+                progressBar.gone()
+                tvEmpty.text = "Search ${cachedLive.size} channels, loading movies & series..."
+                tvEmpty.visible()
+                loadMissingData()
+                return
+            }
+
             isDataLoaded = true
             progressBar.gone()
             tvEmpty.text = "Search ${cachedLive.size} channels, ${cachedVod.size} movies, ${cachedSeries.size} series"
@@ -150,6 +161,38 @@ class SearchFragment : Fragment() {
             } else {
                 tvEmpty.text = "Search ${cachedLive.size} channels, ${cachedVod.size} movies, ${cachedSeries.size} series"
             }
+            tvEmpty.visible()
+        }
+    }
+
+    private fun loadMissingData() {
+        val prefs = MainActivity.prefsInstance
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                if (cachedVod.isEmpty()) {
+                    val vod = async(Dispatchers.IO) {
+                        withTimeoutOrNull(30_000) {
+                            try { MainActivity.apiService.getVodStreams(prefs.username, prefs.password) }
+                            catch (_: Exception) { null }
+                        } ?: emptyList()
+                    }
+                    cachedVod = vod.await()
+                    SearchDataCache.vodStreams = cachedVod
+                }
+                if (cachedSeries.isEmpty()) {
+                    val series = async(Dispatchers.IO) {
+                        withTimeoutOrNull(30_000) {
+                            try { MainActivity.apiService.getSeries(prefs.username, prefs.password) }
+                            catch (_: Exception) { null }
+                        } ?: emptyList()
+                    }
+                    cachedSeries = series.await()
+                    SearchDataCache.seriesItems = cachedSeries
+                }
+            } catch (_: Exception) {}
+
+            if (!isAdded) return@launch
+            tvEmpty.text = "Search ${cachedLive.size} channels, ${cachedVod.size} movies, ${cachedSeries.size} series"
             tvEmpty.visible()
         }
     }
