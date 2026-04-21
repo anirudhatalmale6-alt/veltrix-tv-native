@@ -611,7 +611,7 @@ class PlayerActivity : AppCompatActivity() {
                 .setReadTimeoutMs(60_000)
                 .setAllowCrossProtocolRedirects(true)
                 .setKeepPostFor302Redirects(true)
-                .setUserAgent("VeltrixTV/1.0 (Android TV; ExoPlayer)")
+                .setUserAgent("Lavf/60.3.100")
 
             val mediaSourceFactory = DefaultMediaSourceFactory(httpDataSourceFactory)
 

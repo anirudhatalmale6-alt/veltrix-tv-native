@@ -103,6 +103,12 @@ class LoginActivity : AppCompatActivity() {
                 val client = OkHttpClient.Builder()
                     .connectTimeout(15, TimeUnit.SECONDS)
                     .readTimeout(15, TimeUnit.SECONDS)
+                    .addInterceptor { chain ->
+                        val request = chain.request().newBuilder()
+                            .header("User-Agent", "Lavf/60.3.100")
+                            .build()
+                        chain.proceed(request)
+                    }
                     .build()
 
                 val api = Retrofit.Builder()

@@ -59,6 +59,7 @@ class MainActivity : AppCompatActivity() {
     private var exitConfirmed = false
 
     companion object {
+        const val USER_AGENT = "Lavf/60.3.100"
         lateinit var apiService: XtreamApiService
             private set
         lateinit var prefsInstance: PrefsManager
@@ -110,9 +111,10 @@ class MainActivity : AppCompatActivity() {
             .connectTimeout(30, TimeUnit.SECONDS)
             .readTimeout(60, TimeUnit.SECONDS)
             .addInterceptor { chain ->
-                // Force fresh requests - no caching for IPTV API
+                // Force fresh requests, use standard user-agent for IPTV compatibility
                 val request = chain.request().newBuilder()
                     .header("Cache-Control", "no-cache, no-store")
+                    .header("User-Agent", USER_AGENT)
                     .build()
                 chain.proceed(request)
             }
@@ -353,7 +355,7 @@ class MainActivity : AppCompatActivity() {
                 .setConnectTimeoutMs(30_000)
                 .setReadTimeoutMs(60_000)
                 .setAllowCrossProtocolRedirects(true)
-                .setUserAgent("VeltrixTV/1.0 (Android TV; ExoPlayer)")
+                .setUserAgent(USER_AGENT)
             val mediaSourceFactory = DefaultMediaSourceFactory(httpDataSourceFactory)
 
             miniPlayer = ExoPlayer.Builder(this)
