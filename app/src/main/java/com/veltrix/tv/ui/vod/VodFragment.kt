@@ -113,10 +113,20 @@ class VodFragment : Fragment(), MainActivity.DpadNavigable {
         loadCategories()
     }
 
+    private fun isPhoneScreen(): Boolean {
+        val displayMetrics = resources.displayMetrics
+        val screenWidthDp = displayMetrics.widthPixels / displayMetrics.density
+        return screenWidthDp < 600 // phones are typically under 600dp width
+    }
+
     private fun setupCategoryAutoHide() {
         // Save original width after layout
         categoryContainer.post {
             categoryWidth = categoryContainer.width
+            // On phones, start with categories hidden for more poster space
+            if (isPhoneScreen()) {
+                collapseCategories()
+            }
         }
 
         // Hide categories when focus moves to poster grid
@@ -199,7 +209,9 @@ class VodFragment : Fragment(), MainActivity.DpadNavigable {
                 toggleFavorite(movie)
             },
             onMovieFocus = { movie ->
-                loadMovieDetail(movie)
+                if (!isPhoneScreen()) {
+                    loadMovieDetail(movie)
+                }
             }
         )
         val columns = calculateGridColumns()

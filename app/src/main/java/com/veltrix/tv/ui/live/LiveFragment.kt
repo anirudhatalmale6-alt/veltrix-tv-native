@@ -119,9 +119,18 @@ class LiveFragment : Fragment(), MainActivity.DpadNavigable {
         loadCategories()
     }
 
+    private fun isPhoneScreen(): Boolean {
+        val displayMetrics = resources.displayMetrics
+        val screenWidthDp = displayMetrics.widthPixels / displayMetrics.density
+        return screenWidthDp < 600
+    }
+
     private fun setupCategoryAutoHide() {
         categoryContainer.post {
             categoryWidth = categoryContainer.width
+            if (isPhoneScreen()) {
+                collapseCategories()
+            }
         }
 
         rvChannels.setOnFocusChangeListener { _, hasFocus ->
