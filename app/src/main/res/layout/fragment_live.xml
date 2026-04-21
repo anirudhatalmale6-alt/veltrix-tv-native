@@ -44,7 +44,7 @@
                 android:layout_width="0dp"
                 android:layout_weight="1"
                 android:layout_height="match_parent"
-                android:background="#DD0e0e22"
+                android:background="#550e0e22"
                 android:clipToPadding="false"
                 android:padding="8dp" />
 
@@ -60,7 +60,7 @@
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:orientation="vertical"
-            android:background="#AA0D0D1A">
+            android:background="#440D0D1A">
 
             <!-- Channel info bar at top -->
             <LinearLayout
@@ -72,7 +72,7 @@
                 android:paddingEnd="16dp"
                 android:paddingTop="12dp"
                 android:paddingBottom="12dp"
-                android:background="#CC0D0D1A">
+                android:background="#550D0D1A">
 
                 <TextView
                     android:id="@+id/tvPreviewChannelName"
@@ -82,7 +82,11 @@
                     android:textSize="20sp"
                     android:textStyle="bold"
                     android:maxLines="1"
-                    android:ellipsize="end" />
+                    android:ellipsize="end"
+                    android:shadowColor="#CC000000"
+                    android:shadowDx="1"
+                    android:shadowDy="1"
+                    android:shadowRadius="4" />
 
                 <TextView
                     android:id="@+id/tvPreviewEpgNow"
