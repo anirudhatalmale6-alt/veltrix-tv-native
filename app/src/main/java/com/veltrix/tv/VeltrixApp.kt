@@ -6,6 +6,7 @@ import coil.Coil
 import coil.ImageLoader
 import coil.disk.DiskCache
 import coil.memory.MemoryCache
+import okhttp3.OkHttpClient
 import java.io.File
 import java.io.PrintWriter
 import java.io.StringWriter
@@ -18,8 +19,19 @@ class VeltrixApp : Application() {
     override fun onCreate() {
         super.onCreate()
 
+        // OkHttp client with IPTV-compatible user-agent for image loading
+        val okHttpClient = OkHttpClient.Builder()
+            .addInterceptor { chain ->
+                val request = chain.request().newBuilder()
+                    .header("User-Agent", "Lavf/60.3.100")
+                    .build()
+                chain.proceed(request)
+            }
+            .build()
+
         // Configure image loading with caching for faster browsing
         val imageLoader = ImageLoader.Builder(this)
+            .okHttpClient(okHttpClient)
             .memoryCache {
                 MemoryCache.Builder(this)
                     .maxSizePercent(0.25) // 25% of app memory
