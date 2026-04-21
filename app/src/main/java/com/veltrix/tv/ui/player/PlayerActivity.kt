@@ -84,6 +84,8 @@ class PlayerActivity : AppCompatActivity() {
     private lateinit var btnPlayPause: ImageButton
     private lateinit var btnRewind: ImageButton
     private lateinit var btnForward: ImageButton
+    private lateinit var btnPrev: ImageButton
+    private lateinit var btnNext: ImageButton
     private lateinit var btnSubtitles: ImageButton
     private lateinit var btnPip: ImageButton
     private lateinit var btnFavorite: ImageButton
@@ -157,6 +159,8 @@ class PlayerActivity : AppCompatActivity() {
         btnRewind = findViewById(R.id.btnRewind)
         btnForward = findViewById(R.id.btnForward)
         btnSubtitles = findViewById(R.id.btnSubtitles)
+        btnPrev = findViewById(R.id.btnPrev)
+        btnNext = findViewById(R.id.btnNext)
         btnPip = findViewById(R.id.btnPip)
         btnFavorite = findViewById(R.id.btnFavorite)
         tvPosition = findViewById(R.id.tvPosition)
@@ -186,13 +190,23 @@ class PlayerActivity : AppCompatActivity() {
 
         setupControls()
 
-        // Hide seek controls for live TV
+        // Hide seek controls for live TV, show prev/next channel buttons
         if (streamType == "live") {
             btnRewind.gone()
             btnForward.gone()
             seekBar.gone()
             tvPosition.gone()
             tvDuration.gone()
+            // Show prev/next for channel zapping
+            if (streamIds != null && streamIds!!.size > 1) {
+                btnPrev.visible()
+                btnNext.visible()
+            }
+        }
+
+        // Touch: tap player area to toggle controls (for phone use)
+        playerView.setOnClickListener {
+            toggleOverlay()
         }
 
         // PiP/mini-player button: always show for live TV (mini-player), hide on old Android for VOD
@@ -250,6 +264,16 @@ class PlayerActivity : AppCompatActivity() {
             }
         }
 
+        btnPrev.setOnClickListener {
+            zapChannel(-1)
+            resetOverlayTimer()
+        }
+
+        btnNext.setOnClickListener {
+            zapChannel(1)
+            resetOverlayTimer()
+        }
+
         btnFavorite.setOnClickListener {
             toggleFavorite()
             resetOverlayTimer()
@@ -272,7 +296,7 @@ class PlayerActivity : AppCompatActivity() {
         })
 
         // Make buttons focusable for D-pad
-        listOf(btnPlayPause, btnRewind, btnForward, btnSubtitles, btnPip, btnFavorite).forEach { btn ->
+        listOf(btnPrev, btnPlayPause, btnRewind, btnForward, btnNext, btnSubtitles, btnPip, btnFavorite).forEach { btn ->
             btn.isFocusable = true
             btn.isFocusableInTouchMode = true
         }
@@ -624,9 +648,11 @@ class PlayerActivity : AppCompatActivity() {
                 // Keep device awake during playback to prevent stream cutoff
                 it.setWakeMode(C.WAKE_MODE_NETWORK)
 
-                // Enable subtitle rendering
+                // Force maximum video quality (4K support) and enable subtitles
                 it.trackSelectionParameters = it.trackSelectionParameters
                     .buildUpon()
+                    .setMaxVideoSize(Int.MAX_VALUE, Int.MAX_VALUE)
+                    .setForceHighestSupportedBitrate(true)
                     .setPreferredTextLanguage("en")
                     .build()
 
