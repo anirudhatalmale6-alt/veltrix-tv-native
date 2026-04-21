@@ -4,9 +4,12 @@ import android.animation.ValueAnimator
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
@@ -63,9 +66,12 @@ class LiveFragment : Fragment(), MainActivity.DpadNavigable {
     private var currentPreviewStreamId: Int = -1
     private var selectedStreamId: Int = -1
 
+    private lateinit var etSearchBar: EditText
+
     private var isCategoryVisible = true
     private var categoryWidth = 0
     private var isFavoritesMode = false
+    private var allLiveCache = listOf<LiveStream>()
 
     override fun canGoLeft(): Boolean {
         val focused = activity?.currentFocus ?: return false
@@ -113,6 +119,7 @@ class LiveFragment : Fragment(), MainActivity.DpadNavigable {
         tvPreviewEpgNext = view.findViewById(R.id.tvPreviewEpgNext)
         tvPreviewResolution = view.findViewById(R.id.tvPreviewResolution)
         tvPreviewAudio = view.findViewById(R.id.tvPreviewAudio)
+        etSearchBar = view.findViewById(R.id.etSearchBar)
 
         setupAdapters()
         setupCategoryAutoHide()
@@ -186,12 +193,21 @@ class LiveFragment : Fragment(), MainActivity.DpadNavigable {
 
     private fun setupAdapters() {
         categoryAdapter = CategoryAdapter { category ->
-            if (category.categoryId == "favorites") {
-                isFavoritesMode = true
-                loadFavorites()
-            } else {
-                isFavoritesMode = false
-                loadStreams(category.categoryId)
+            when (category.categoryId) {
+                "favorites" -> {
+                    isFavoritesMode = true
+                    hideSearchBar()
+                    loadFavorites()
+                }
+                "search" -> {
+                    isFavoritesMode = false
+                    showSearchMode()
+                }
+                else -> {
+                    isFavoritesMode = false
+                    hideSearchBar()
+                    loadStreams(category.categoryId)
+                }
             }
         }
         rvCategories.layoutManager = LinearLayoutManager(requireContext())
@@ -309,6 +325,62 @@ class LiveFragment : Fragment(), MainActivity.DpadNavigable {
                 tvEmpty.visible()
             }
         }
+    }
+
+    private fun showSearchMode() {
+        etSearchBar.visible()
+        etSearchBar.setText("")
+        etSearchBar.requestFocus()
+
+        // Load all channels for searching
+        val prefs = MainActivity.prefsInstance
+        progressBar.visible()
+        tvEmpty.gone()
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                if (allLiveCache.isEmpty()) {
+                    allLiveCache = withContext(Dispatchers.IO) {
+                        MainActivity.apiService.getLiveStreams(prefs.username, prefs.password)
+                    }
+                }
+                progressBar.gone()
+                allStreams = allLiveCache
+                channelListAdapter.submitList(allLiveCache)
+                tvEmpty.gone()
+            } catch (e: Exception) {
+                progressBar.gone()
+                tvEmpty.text = "Error loading channels"
+                tvEmpty.visible()
+            }
+        }
+
+        etSearchBar.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: Editable?) {
+                val query = s?.toString()?.lowercase() ?: ""
+                if (query.length < 2) {
+                    channelListAdapter.submitList(allLiveCache)
+                    allStreams = allLiveCache
+                } else {
+                    val filtered = allLiveCache.filter { it.name.lowercase().contains(query) }
+                    channelListAdapter.submitList(filtered)
+                    allStreams = filtered
+                    if (filtered.isEmpty()) {
+                        tvEmpty.text = "No channels found for \"$query\""
+                        tvEmpty.visible()
+                    } else {
+                        tvEmpty.gone()
+                    }
+                }
+            }
+        })
+    }
+
+    private fun hideSearchBar() {
+        etSearchBar.gone()
+        etSearchBar.setText("")
     }
 
     private fun startPreview(stream: LiveStream) {
@@ -457,15 +529,16 @@ class LiveFragment : Fragment(), MainActivity.DpadNavigable {
                     MainActivity.apiService.getLiveCategories(prefs.username, prefs.password)
                 }
 
-                // Build category list: Favorites first, then All, then server categories
+                // Build category list: Favorites, Search, All, then server categories
                 val favCategory = Category("favorites", "Favorites", 0)
+                val searchCategory = Category("search", "Search", 0)
                 val allCategory = Category("0", getString(R.string.all_categories), 0)
-                val fullList = listOf(favCategory, allCategory) + categories
+                val fullList = listOf(favCategory, searchCategory, allCategory) + categories
                 categoryAdapter.submitList(fullList)
 
-                // Select first real category (skip Favorites and All)
+                // Select first real category (skip Favorites, Search and All)
                 val firstCategoryId = if (categories.isNotEmpty()) categories[0].categoryId else "0"
-                categoryAdapter.setSelected(if (categories.isNotEmpty()) 2 else 1)
+                categoryAdapter.setSelected(if (categories.isNotEmpty()) 3 else 2)
                 loadStreams(firstCategoryId)
             } catch (e: Exception) {
                 android.util.Log.e("VeltrixTV", "loadCategories error", e)

@@ -3,9 +3,12 @@ package com.veltrix.tv.ui.series
 import android.animation.ValueAnimator
 import android.content.Intent
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
@@ -38,8 +41,10 @@ class SeriesFragment : Fragment(), MainActivity.DpadNavigable {
 
     private lateinit var categoryAdapter: CategoryAdapter
     private lateinit var seriesAdapter: SeriesAdapter
+    private lateinit var etSearchBar: EditText
     private var isCategoryVisible = true
     private var categoryWidth = 0
+    private var allSeriesCache = listOf<SeriesItem>()
 
     override fun canGoLeft(): Boolean {
         val focused = activity?.currentFocus ?: return false
@@ -78,6 +83,7 @@ class SeriesFragment : Fragment(), MainActivity.DpadNavigable {
         rvSeries = view.findViewById(R.id.rvSeries)
         progressBar = view.findViewById(R.id.progressBar)
         tvEmpty = view.findViewById(R.id.tvEmpty)
+        etSearchBar = view.findViewById(R.id.etSearchBar)
 
         setupAdapters()
         setupCategoryAutoHide()
@@ -151,7 +157,19 @@ class SeriesFragment : Fragment(), MainActivity.DpadNavigable {
 
     private fun setupAdapters() {
         categoryAdapter = CategoryAdapter { category ->
-            loadSeries(category.categoryId)
+            when (category.categoryId) {
+                "favorites" -> {
+                    hideSearchBar()
+                    loadSeriesFavorites()
+                }
+                "search" -> {
+                    showSearchMode()
+                }
+                else -> {
+                    hideSearchBar()
+                    loadSeries(category.categoryId)
+                }
+            }
         }
         rvCategories.layoutManager = LinearLayoutManager(requireContext())
         rvCategories.adapter = categoryAdapter
@@ -226,13 +244,15 @@ class SeriesFragment : Fragment(), MainActivity.DpadNavigable {
                     MainActivity.apiService.getSeriesCategories(prefs.username, prefs.password)
                 }
 
+                val favCategory = Category("favorites", "Favorites", 0)
+                val searchCategory = Category("search", "Search", 0)
                 val allCategory = Category("0", getString(R.string.all_categories), 0)
-                val fullList = listOf(allCategory) + categories
+                val fullList = listOf(favCategory, searchCategory, allCategory) + categories
                 categoryAdapter.submitList(fullList)
 
-                // Load first real category instead of "All" to avoid loading thousands of series
+                // Load first real category (skip Favorites, Search, All)
                 val firstCategoryId = if (categories.isNotEmpty()) categories[0].categoryId else "0"
-                categoryAdapter.setSelected(if (categories.isNotEmpty()) 1 else 0)
+                categoryAdapter.setSelected(if (categories.isNotEmpty()) 3 else 2)
                 loadSeries(firstCategoryId)
             } catch (e: Exception) {
                 android.util.Log.e("VeltrixTV", "SeriesFragment load error", e)
@@ -262,7 +282,6 @@ class SeriesFragment : Fragment(), MainActivity.DpadNavigable {
                 }
 
                 if (series.isEmpty() && categoryId != "0") {
-                    // First category was empty - try loading all series
                     android.util.Log.d("VeltrixTV", "Category $categoryId empty, loading all series")
                     val allSeries = withContext(Dispatchers.IO) {
                         MainActivity.apiService.getSeries(prefs.username, prefs.password)
@@ -294,5 +313,97 @@ class SeriesFragment : Fragment(), MainActivity.DpadNavigable {
                 tvEmpty.visible()
             }
         }
+    }
+
+    private fun loadSeriesFavorites() {
+        progressBar.visible()
+        tvEmpty.gone()
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val dao = AppDatabase.getInstance(requireContext()).favoriteDao()
+                val favs = withContext(Dispatchers.IO) { dao.getByType("series") }
+
+                if (favs.isEmpty()) {
+                    progressBar.gone()
+                    tvEmpty.text = "No favorites yet. Long-press a series to add it."
+                    tvEmpty.visible()
+                    seriesAdapter.submitList(emptyList())
+                    return@launch
+                }
+
+                val prefs = MainActivity.prefsInstance
+                val allSeries = withContext(Dispatchers.IO) {
+                    MainActivity.apiService.getSeries(prefs.username, prefs.password)
+                }
+                val favIds = favs.map { it.streamId }.toSet()
+                val favSeries = allSeries.filter { it.seriesId in favIds }
+
+                seriesAdapter.submitList(favSeries)
+                progressBar.gone()
+                if (favSeries.isEmpty()) {
+                    tvEmpty.text = "No favorites found"
+                    tvEmpty.visible()
+                } else {
+                    tvEmpty.gone()
+                }
+            } catch (e: Exception) {
+                progressBar.gone()
+                tvEmpty.text = "Error: ${e.message}"
+                tvEmpty.visible()
+            }
+        }
+    }
+
+    private fun showSearchMode() {
+        etSearchBar.visible()
+        etSearchBar.setText("")
+        etSearchBar.requestFocus()
+
+        val prefs = MainActivity.prefsInstance
+        progressBar.visible()
+        tvEmpty.gone()
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                if (allSeriesCache.isEmpty()) {
+                    allSeriesCache = withContext(Dispatchers.IO) {
+                        MainActivity.apiService.getSeries(prefs.username, prefs.password)
+                    }
+                }
+                progressBar.gone()
+                seriesAdapter.submitList(allSeriesCache)
+                tvEmpty.gone()
+            } catch (e: Exception) {
+                progressBar.gone()
+                tvEmpty.text = "Error loading series"
+                tvEmpty.visible()
+            }
+        }
+
+        etSearchBar.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: Editable?) {
+                val query = s?.toString()?.lowercase() ?: ""
+                if (query.length < 2) {
+                    seriesAdapter.submitList(allSeriesCache)
+                } else {
+                    val filtered = allSeriesCache.filter { it.name.lowercase().contains(query) }
+                    seriesAdapter.submitList(filtered)
+                    if (filtered.isEmpty()) {
+                        tvEmpty.text = "No series found for \"$query\""
+                        tvEmpty.visible()
+                    } else {
+                        tvEmpty.gone()
+                    }
+                }
+            }
+        })
+    }
+
+    private fun hideSearchBar() {
+        etSearchBar.gone()
+        etSearchBar.setText("")
     }
 }

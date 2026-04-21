@@ -3,9 +3,12 @@ package com.veltrix.tv.ui.vod
 import android.animation.ValueAnimator
 import android.content.Intent
 import android.os.Bundle
+import android.text.Editable
+import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
@@ -55,10 +58,13 @@ class VodFragment : Fragment(), MainActivity.DpadNavigable {
     private lateinit var categoryAdapter: CategoryAdapter
     private lateinit var vodAdapter: VodAdapter
 
+    private lateinit var etSearchBar: EditText
+
     private var detailLoadJob: Job? = null
     private var currentSelectedCategory: String = ""
     private var isCategoryVisible = true
     private var categoryWidth = 0
+    private var allVodCache = listOf<VodStream>()
 
     override fun canGoLeft(): Boolean {
         val focused = activity?.currentFocus ?: return false
@@ -107,6 +113,7 @@ class VodFragment : Fragment(), MainActivity.DpadNavigable {
         tvDirector = view.findViewById(R.id.tvDirector)
         tvPlot = view.findViewById(R.id.tvPlot)
         tvCategoryHeader = view.findViewById(R.id.tvCategoryHeader)
+        etSearchBar = view.findViewById(R.id.etSearchBar)
 
         setupAdapters()
         setupCategoryAutoHide()
@@ -194,9 +201,25 @@ class VodFragment : Fragment(), MainActivity.DpadNavigable {
 
     private fun setupAdapters() {
         categoryAdapter = CategoryAdapter { category ->
-            currentSelectedCategory = category.categoryName
-            tvCategoryHeader.text = category.categoryName
-            loadMovies(category.categoryId)
+            when (category.categoryId) {
+                "favorites" -> {
+                    currentSelectedCategory = "Favorites"
+                    tvCategoryHeader.text = "Favorites"
+                    hideSearchBar()
+                    loadVodFavorites()
+                }
+                "search" -> {
+                    currentSelectedCategory = "Search"
+                    tvCategoryHeader.text = "Search"
+                    showSearchMode()
+                }
+                else -> {
+                    currentSelectedCategory = category.categoryName
+                    tvCategoryHeader.text = category.categoryName
+                    hideSearchBar()
+                    loadMovies(category.categoryId)
+                }
+            }
         }
         rvCategories.layoutManager = LinearLayoutManager(requireContext())
         rvCategories.adapter = categoryAdapter
@@ -415,14 +438,16 @@ class VodFragment : Fragment(), MainActivity.DpadNavigable {
                     MainActivity.apiService.getVodCategories(prefs.username, prefs.password)
                 }
 
+                val favCategory = Category("favorites", "Favorites", 0)
+                val searchCategory = Category("search", "Search", 0)
                 val allCategory = Category("0", getString(R.string.all_categories), 0)
-                val fullList = listOf(allCategory) + categories
+                val fullList = listOf(favCategory, searchCategory, allCategory) + categories
                 categoryAdapter.submitList(fullList)
 
                 val firstCategoryId = if (categories.isNotEmpty()) categories[0].categoryId else "0"
                 currentSelectedCategory = if (categories.isNotEmpty()) categories[0].categoryName else "All"
                 tvCategoryHeader.text = currentSelectedCategory
-                categoryAdapter.setSelected(if (categories.isNotEmpty()) 1 else 0)
+                categoryAdapter.setSelected(if (categories.isNotEmpty()) 3 else 2)
                 loadMovies(firstCategoryId)
             } catch (e: Exception) {
                 android.util.Log.e("VeltrixTV", "VodFragment load error", e)
@@ -485,5 +510,99 @@ class VodFragment : Fragment(), MainActivity.DpadNavigable {
                 tvEmpty.visible()
             }
         }
+    }
+
+    private fun loadVodFavorites() {
+        progressBar.visible()
+        tvEmpty.gone()
+        detailPanel.gone()
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val dao = AppDatabase.getInstance(requireContext()).favoriteDao()
+                val favs = withContext(Dispatchers.IO) { dao.getByType("vod") }
+
+                if (favs.isEmpty()) {
+                    progressBar.gone()
+                    tvEmpty.text = "No favorites yet. Long-press a movie to add it."
+                    tvEmpty.visible()
+                    vodAdapter.submitList(emptyList())
+                    return@launch
+                }
+
+                val prefs = MainActivity.prefsInstance
+                val allVod = withContext(Dispatchers.IO) {
+                    MainActivity.apiService.getVodStreams(prefs.username, prefs.password)
+                }
+                val favIds = favs.map { it.streamId }.toSet()
+                val favStreams = allVod.filter { it.streamId in favIds }
+
+                vodAdapter.submitList(favStreams)
+                progressBar.gone()
+                if (favStreams.isEmpty()) {
+                    tvEmpty.text = "No favorites found"
+                    tvEmpty.visible()
+                } else {
+                    tvEmpty.gone()
+                }
+            } catch (e: Exception) {
+                progressBar.gone()
+                tvEmpty.text = "Error: ${e.message}"
+                tvEmpty.visible()
+            }
+        }
+    }
+
+    private fun showSearchMode() {
+        etSearchBar.visible()
+        etSearchBar.setText("")
+        etSearchBar.requestFocus()
+        detailPanel.gone()
+
+        val prefs = MainActivity.prefsInstance
+        progressBar.visible()
+        tvEmpty.gone()
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                if (allVodCache.isEmpty()) {
+                    allVodCache = withContext(Dispatchers.IO) {
+                        MainActivity.apiService.getVodStreams(prefs.username, prefs.password)
+                    }
+                }
+                progressBar.gone()
+                vodAdapter.submitList(allVodCache)
+                tvEmpty.gone()
+            } catch (e: Exception) {
+                progressBar.gone()
+                tvEmpty.text = "Error loading movies"
+                tvEmpty.visible()
+            }
+        }
+
+        etSearchBar.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: Editable?) {
+                val query = s?.toString()?.lowercase() ?: ""
+                if (query.length < 2) {
+                    vodAdapter.submitList(allVodCache)
+                } else {
+                    val filtered = allVodCache.filter { it.name.lowercase().contains(query) }
+                    vodAdapter.submitList(filtered)
+                    if (filtered.isEmpty()) {
+                        tvEmpty.text = "No movies found for \"$query\""
+                        tvEmpty.visible()
+                    } else {
+                        tvEmpty.gone()
+                    }
+                }
+            }
+        })
+    }
+
+    private fun hideSearchBar() {
+        etSearchBar.gone()
+        etSearchBar.setText("")
     }
 }
