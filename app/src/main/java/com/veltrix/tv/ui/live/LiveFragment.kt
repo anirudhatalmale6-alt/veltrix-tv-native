@@ -1,11 +1,13 @@
 package com.veltrix.tv.ui.live
 
+import android.animation.ValueAnimator
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.fragment.app.Fragment
@@ -38,6 +40,7 @@ import kotlinx.coroutines.withContext
 
 class LiveFragment : Fragment(), MainActivity.DpadNavigable {
 
+    private lateinit var categoryContainer: LinearLayout
     private lateinit var rvCategories: RecyclerView
     private lateinit var rvChannels: RecyclerView
     private lateinit var progressBar: ProgressBar
@@ -58,11 +61,23 @@ class LiveFragment : Fragment(), MainActivity.DpadNavigable {
     private var allStreams = listOf<LiveStream>()
     private var previewPlayer: ExoPlayer? = null
     private var currentPreviewStreamId: Int = -1
-    private var selectedStreamId: Int = -1  // Track which channel was clicked (for double-click-to-play)
+    private var selectedStreamId: Int = -1
+
+    private var isCategoryVisible = true
+    private var categoryWidth = 0
+    private var isFavoritesMode = false
 
     override fun canGoLeft(): Boolean {
         val focused = activity?.currentFocus ?: return false
-        return rvChannels.isAncestorOf(focused)
+        if (rvChannels.isAncestorOf(focused)) {
+            if (!isCategoryVisible) {
+                expandCategories()
+                rvCategories.post { rvCategories.getChildAt(0)?.requestFocus() }
+                return false
+            }
+            return true
+        }
+        return false
     }
 
     private fun RecyclerView.isAncestorOf(view: View): Boolean {
@@ -84,6 +99,7 @@ class LiveFragment : Fragment(), MainActivity.DpadNavigable {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        categoryContainer = view.findViewById(R.id.categoryContainer)
         rvCategories = view.findViewById(R.id.rvCategories)
         rvChannels = view.findViewById(R.id.rvChannels)
         progressBar = view.findViewById(R.id.progressBar)
@@ -99,12 +115,75 @@ class LiveFragment : Fragment(), MainActivity.DpadNavigable {
         tvPreviewAudio = view.findViewById(R.id.tvPreviewAudio)
 
         setupAdapters()
+        setupCategoryAutoHide()
         loadCategories()
+    }
+
+    private fun setupCategoryAutoHide() {
+        categoryContainer.post {
+            categoryWidth = categoryContainer.width
+        }
+
+        rvChannels.setOnFocusChangeListener { _, hasFocus ->
+            if (hasFocus && isCategoryVisible) collapseCategories()
+        }
+        rvChannels.addOnChildAttachStateChangeListener(object : RecyclerView.OnChildAttachStateChangeListener {
+            override fun onChildViewAttachedToWindow(view: View) {
+                view.setOnFocusChangeListener { _, hasFocus ->
+                    if (hasFocus && isCategoryVisible) collapseCategories()
+                }
+            }
+            override fun onChildViewDetachedFromWindow(view: View) {}
+        })
+
+        rvCategories.setOnFocusChangeListener { _, hasFocus ->
+            if (hasFocus && !isCategoryVisible) expandCategories()
+        }
+        rvCategories.addOnChildAttachStateChangeListener(object : RecyclerView.OnChildAttachStateChangeListener {
+            override fun onChildViewAttachedToWindow(view: View) {
+                view.setOnFocusChangeListener { _, hasFocus ->
+                    if (hasFocus && !isCategoryVisible) expandCategories()
+                }
+            }
+            override fun onChildViewDetachedFromWindow(view: View) {}
+        })
+    }
+
+    private fun collapseCategories() {
+        if (!isCategoryVisible) return
+        isCategoryVisible = false
+        val animator = ValueAnimator.ofInt(categoryWidth, 0)
+        animator.duration = 200
+        animator.addUpdateListener { anim ->
+            val params = categoryContainer.layoutParams
+            params.width = anim.animatedValue as Int
+            categoryContainer.layoutParams = params
+        }
+        animator.start()
+    }
+
+    private fun expandCategories() {
+        if (isCategoryVisible) return
+        isCategoryVisible = true
+        val animator = ValueAnimator.ofInt(0, categoryWidth)
+        animator.duration = 200
+        animator.addUpdateListener { anim ->
+            val params = categoryContainer.layoutParams
+            params.width = anim.animatedValue as Int
+            categoryContainer.layoutParams = params
+        }
+        animator.start()
     }
 
     private fun setupAdapters() {
         categoryAdapter = CategoryAdapter { category ->
-            loadStreams(category.categoryId)
+            if (category.categoryId == "favorites") {
+                isFavoritesMode = true
+                loadFavorites()
+            } else {
+                isFavoritesMode = false
+                loadStreams(category.categoryId)
+            }
         }
         rvCategories.layoutManager = LinearLayoutManager(requireContext())
         rvCategories.adapter = categoryAdapter
@@ -112,13 +191,11 @@ class LiveFragment : Fragment(), MainActivity.DpadNavigable {
         channelListAdapter = ChannelListAdapter(
             onChannelClick = { stream, position ->
                 if (stream.streamId == selectedStreamId) {
-                    // Second click on same channel = open full screen player
                     openPlayer(stream, position)
                 } else {
-                    // First click = update preview to this channel
                     selectedStreamId = stream.streamId
                     startPreview(stream)
-                    channelListAdapter.setPlaying(position)
+                    channelListAdapter.setPlaying(stream.streamId)
                 }
             },
             onChannelFocus = { stream, _ ->
@@ -176,6 +253,52 @@ class LiveFragment : Fragment(), MainActivity.DpadNavigable {
             requireContext().toast(
                 getString(if (isFav) R.string.fav_removed else R.string.fav_added)
             )
+            // Refresh if in favorites mode
+            if (isFavoritesMode) loadFavorites()
+        }
+    }
+
+    private fun loadFavorites() {
+        val prefs = MainActivity.prefsInstance
+        progressBar.visible()
+        tvEmpty.gone()
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val dao = AppDatabase.getInstance(requireContext()).favoriteDao()
+                val favs = withContext(Dispatchers.IO) { dao.getByType("live") }
+
+                if (favs.isEmpty()) {
+                    progressBar.gone()
+                    tvEmpty.text = "No favorites yet. Long-press a channel to add it."
+                    tvEmpty.visible()
+                    channelListAdapter.submitList(emptyList())
+                    return@launch
+                }
+
+                // Load all live streams and filter to favorites
+                val allLive = withContext(Dispatchers.IO) {
+                    MainActivity.apiService.getLiveStreams(prefs.username, prefs.password)
+                }
+                val favIds = favs.map { it.streamId }.toSet()
+                val favStreams = allLive.filter { it.streamId in favIds }
+
+                allStreams = favStreams
+                channelListAdapter.submitList(favStreams)
+                progressBar.gone()
+
+                if (favStreams.isEmpty()) {
+                    tvEmpty.text = "No favorites found"
+                    tvEmpty.visible()
+                } else {
+                    tvEmpty.gone()
+                    startPreview(favStreams[0])
+                }
+            } catch (e: Exception) {
+                progressBar.gone()
+                tvEmpty.text = "Error: ${e.message}"
+                tvEmpty.visible()
+            }
         }
     }
 
@@ -183,7 +306,6 @@ class LiveFragment : Fragment(), MainActivity.DpadNavigable {
         if (stream.streamId == currentPreviewStreamId) return
         currentPreviewStreamId = stream.streamId
 
-        // Update info labels
         tvPreviewChannelName.text = stream.name
         tvPreviewEpgNow.text = ""
         tvPreviewEpgNext.text = ""
@@ -193,7 +315,6 @@ class LiveFragment : Fragment(), MainActivity.DpadNavigable {
         val prefs = MainActivity.prefsInstance
         val streamUrl = "${prefs.getBaseUrl()}/live/${prefs.username}/${prefs.password}/${stream.streamId}.ts"
 
-        // Release previous preview player
         previewPlayer?.release()
         previewLoading.visible()
 
@@ -205,7 +326,7 @@ class LiveFragment : Fragment(), MainActivity.DpadNavigable {
             .setConnectTimeoutMs(15_000)
             .setReadTimeoutMs(30_000)
             .setAllowCrossProtocolRedirects(true)
-            .setUserAgent("VeltrixTV/1.0 (Android TV; ExoPlayer)")
+            .setUserAgent("Lavf/60.3.100")
 
         val mediaSourceFactory = DefaultMediaSourceFactory(httpDataSourceFactory)
 
@@ -214,17 +335,22 @@ class LiveFragment : Fragment(), MainActivity.DpadNavigable {
             .setMediaSourceFactory(mediaSourceFactory)
             .build().also { player ->
                 previewPlayerView.player = player
-                player.volume = 1f // Preview with audio
+                player.volume = 1f
                 player.setWakeMode(C.WAKE_MODE_NETWORK)
+
+                // Force max quality for preview too
+                player.trackSelectionParameters = player.trackSelectionParameters
+                    .buildUpon()
+                    .setMaxVideoSize(Int.MAX_VALUE, Int.MAX_VALUE)
+                    .setForceHighestSupportedBitrate(true)
+                    .build()
 
                 player.addListener(object : Player.Listener {
                     override fun onPlaybackStateChanged(state: Int) {
                         if (state == Player.STATE_READY) {
                             previewLoading.gone()
-                            // Update resolution and audio info
                             updateStreamInfo(player)
                         } else if (state == Player.STATE_ENDED) {
-                            // Reconnect
                             player.clearMediaItems()
                             player.setMediaItem(MediaItem.fromUri(Uri.parse(streamUrl)))
                             player.prepare()
@@ -242,7 +368,6 @@ class LiveFragment : Fragment(), MainActivity.DpadNavigable {
                 player.playWhenReady = true
             }
 
-        // Load EPG for this channel
         loadEpg(stream)
     }
 
@@ -252,8 +377,20 @@ class LiveFragment : Fragment(), MainActivity.DpadNavigable {
             val audioFormat = player.audioFormat
 
             if (videoFormat != null) {
-                tvPreviewResolution.text = "${videoFormat.width}x${videoFormat.height}"
-                tvPreviewResolution.visible()
+                val w = videoFormat.width
+                val h = videoFormat.height
+                val label = when {
+                    h >= 2160 -> "4K  ${w}×${h}"
+                    h >= 1080 -> "FHD  ${w}×${h}"
+                    h >= 720 -> "HD  ${w}×${h}"
+                    h >= 480 -> "SD  ${w}×${h}"
+                    w > 0 && h > 0 -> "${w}×${h}"
+                    else -> null
+                }
+                if (label != null) {
+                    tvPreviewResolution.text = label
+                    tvPreviewResolution.visible()
+                }
             }
 
             if (audioFormat != null) {
@@ -272,7 +409,6 @@ class LiveFragment : Fragment(), MainActivity.DpadNavigable {
     }
 
     private fun loadEpg(stream: LiveStream) {
-        val epgId = stream.epgChannelId ?: return
         val prefs = MainActivity.prefsInstance
 
         viewLifecycleOwner.lifecycleScope.launch {
@@ -297,7 +433,6 @@ class LiveFragment : Fragment(), MainActivity.DpadNavigable {
                     }
                 }
             } catch (e: Exception) {
-                // EPG not available - that's ok
                 android.util.Log.d("VeltrixTV", "EPG not available for ${stream.name}: ${e.message}")
             }
         }
@@ -313,12 +448,15 @@ class LiveFragment : Fragment(), MainActivity.DpadNavigable {
                     MainActivity.apiService.getLiveCategories(prefs.username, prefs.password)
                 }
 
+                // Build category list: Favorites first, then All, then server categories
+                val favCategory = Category("favorites", "Favorites", 0)
                 val allCategory = Category("0", getString(R.string.all_categories), 0)
-                val fullList = listOf(allCategory) + categories
+                val fullList = listOf(favCategory, allCategory) + categories
                 categoryAdapter.submitList(fullList)
 
+                // Select first real category (skip Favorites and All)
                 val firstCategoryId = if (categories.isNotEmpty()) categories[0].categoryId else "0"
-                categoryAdapter.setSelected(if (categories.isNotEmpty()) 1 else 0)
+                categoryAdapter.setSelected(if (categories.isNotEmpty()) 2 else 1)
                 loadStreams(firstCategoryId)
             } catch (e: Exception) {
                 android.util.Log.e("VeltrixTV", "loadCategories error", e)
@@ -361,7 +499,7 @@ class LiveFragment : Fragment(), MainActivity.DpadNavigable {
                         tvEmpty.visible()
                     } else {
                         tvEmpty.gone()
-                        categoryAdapter.setSelected(0)
+                        categoryAdapter.setSelected(1) // select "All"
                     }
                     return@launch
                 }
@@ -375,7 +513,6 @@ class LiveFragment : Fragment(), MainActivity.DpadNavigable {
                     tvEmpty.visible()
                 } else {
                     tvEmpty.gone()
-                    // Auto-preview first channel
                     if (streams.isNotEmpty()) {
                         startPreview(streams[0])
                     }
@@ -394,10 +531,8 @@ class LiveFragment : Fragment(), MainActivity.DpadNavigable {
             val prefs = MainActivity.prefsInstance
             val streamUrl = "${prefs.getBaseUrl()}/live/${prefs.username}/${prefs.password}/${stream.streamId}.ts"
 
-            // Store channel list in memory holder (avoids Binder transaction limit)
             ChannelListHolder.set(allStreams)
 
-            // Stop preview and mini-player before opening full player (prevents mixed audio)
             previewPlayer?.release()
             previewPlayer = null
             (activity as? MainActivity)?.closeMiniPlayer()

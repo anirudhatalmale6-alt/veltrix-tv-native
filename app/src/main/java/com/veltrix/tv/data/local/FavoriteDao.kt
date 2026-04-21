@@ -12,6 +12,9 @@ interface FavoriteDao {
     @Query("SELECT * FROM favorites WHERE type = :type ORDER BY name ASC")
     fun getFavoritesByType(type: String): Flow<List<FavoriteEntity>>
 
+    @Query("SELECT * FROM favorites WHERE type = :type ORDER BY name ASC")
+    suspend fun getByType(type: String): List<FavoriteEntity>
+
     @Query("SELECT EXISTS(SELECT 1 FROM favorites WHERE streamId = :streamId AND type = :type)")
     suspend fun isFavorite(streamId: Int, type: String): Boolean
 
