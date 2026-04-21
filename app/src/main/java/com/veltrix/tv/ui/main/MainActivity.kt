@@ -109,7 +109,7 @@ class MainActivity : AppCompatActivity() {
         } catch (_: Exception) {}
         val client = OkHttpClient.Builder()
             .connectTimeout(30, TimeUnit.SECONDS)
-            .readTimeout(60, TimeUnit.SECONDS)
+            .readTimeout(120, TimeUnit.SECONDS)
             .addInterceptor { chain ->
                 // Force fresh requests, use standard user-agent for IPTV compatibility
                 val request = chain.request().newBuilder()
@@ -142,13 +142,13 @@ class MainActivity : AppCompatActivity() {
                     } ?: emptyList()
                 }
                 val vodJob = async(Dispatchers.IO) {
-                    withTimeoutOrNull(30_000) {
+                    withTimeoutOrNull(90_000) {
                         try { apiService.getVodStreams(prefs.username, prefs.password) }
                         catch (_: Exception) { null }
                     } ?: emptyList()
                 }
                 val seriesJob = async(Dispatchers.IO) {
-                    withTimeoutOrNull(30_000) {
+                    withTimeoutOrNull(90_000) {
                         try { apiService.getSeries(prefs.username, prefs.password) }
                         catch (_: Exception) { null }
                     } ?: emptyList()

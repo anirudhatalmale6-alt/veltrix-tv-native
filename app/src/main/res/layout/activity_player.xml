@@ -31,7 +31,11 @@
             android:layout_height="wrap_content"
             android:textColor="@color/white"
             android:textSize="24sp"
-            android:textStyle="bold" />
+            android:textStyle="bold"
+            android:shadowColor="#CC000000"
+            android:shadowDx="1"
+            android:shadowDy="1"
+            android:shadowRadius="6" />
 
         <TextView
             android:id="@+id/tvChannelCategory"
@@ -39,7 +43,11 @@
             android:layout_height="wrap_content"
             android:textColor="@color/text_secondary"
             android:textSize="16sp"
-            android:layout_marginTop="4dp" />
+            android:layout_marginTop="4dp"
+            android:shadowColor="#CC000000"
+            android:shadowDx="1"
+            android:shadowDy="1"
+            android:shadowRadius="4" />
 
         <!-- Stream info badges (resolution, audio, subtitle) -->
         <LinearLayout

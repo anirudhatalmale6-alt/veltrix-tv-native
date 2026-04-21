@@ -171,23 +171,31 @@ class SearchFragment : Fragment() {
             try {
                 if (cachedVod.isEmpty()) {
                     val vod = async(Dispatchers.IO) {
-                        withTimeoutOrNull(30_000) {
+                        withTimeoutOrNull(90_000) {
                             try { MainActivity.apiService.getVodStreams(prefs.username, prefs.password) }
-                            catch (_: Exception) { null }
+                            catch (e: Exception) {
+                                android.util.Log.e("VeltrixTV", "Search VOD reload error", e)
+                                null
+                            }
                         } ?: emptyList()
                     }
                     cachedVod = vod.await()
                     SearchDataCache.vodStreams = cachedVod
+                    android.util.Log.d("VeltrixTV", "Search VOD reloaded: ${cachedVod.size}")
                 }
                 if (cachedSeries.isEmpty()) {
                     val series = async(Dispatchers.IO) {
-                        withTimeoutOrNull(30_000) {
+                        withTimeoutOrNull(90_000) {
                             try { MainActivity.apiService.getSeries(prefs.username, prefs.password) }
-                            catch (_: Exception) { null }
+                            catch (e: Exception) {
+                                android.util.Log.e("VeltrixTV", "Search series reload error", e)
+                                null
+                            }
                         } ?: emptyList()
                     }
                     cachedSeries = series.await()
                     SearchDataCache.seriesItems = cachedSeries
+                    android.util.Log.d("VeltrixTV", "Search series reloaded: ${cachedSeries.size}")
                 }
             } catch (_: Exception) {}
 
