@@ -403,11 +403,16 @@ class LiveFragment : Fragment(), MainActivity.DpadNavigable {
             .setBufferDurationsMs(10_000, 30_000, 2_000, 5_000)
             .build()
 
+        val defaultHeaders = mapOf(
+            "Connection" to "keep-alive",
+            "Accept" to "*/*"
+        )
         val httpDataSourceFactory = DefaultHttpDataSource.Factory()
             .setConnectTimeoutMs(15_000)
             .setReadTimeoutMs(30_000)
             .setAllowCrossProtocolRedirects(true)
             .setUserAgent("Lavf/60.3.100")
+            .setDefaultRequestProperties(defaultHeaders)
 
         val mediaSourceFactory = DefaultMediaSourceFactory(httpDataSourceFactory)
 

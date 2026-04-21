@@ -6,8 +6,11 @@ import coil.Coil
 import coil.ImageLoader
 import coil.disk.DiskCache
 import coil.memory.MemoryCache
+import okhttp3.Dns
 import okhttp3.OkHttpClient
 import java.io.File
+import java.net.InetAddress
+import java.util.concurrent.TimeUnit
 import java.io.PrintWriter
 import java.io.StringWriter
 import java.text.SimpleDateFormat
@@ -19,11 +22,27 @@ class VeltrixApp : Application() {
     override fun onCreate() {
         super.onCreate()
 
-        // OkHttp client with IPTV-compatible user-agent for image loading
+        // OkHttp client with IPTV-compatible user-agent + DNS fallback for image loading
+        val iptvDns = object : Dns {
+            override fun lookup(hostname: String): List<InetAddress> {
+                return try {
+                    val result = Dns.SYSTEM.lookup(hostname)
+                    if (result.isNotEmpty()) result else InetAddress.getAllByName(hostname).toList()
+                } catch (_: Exception) {
+                    try { InetAddress.getAllByName(hostname).toList() } catch (_: Exception) { emptyList() }
+                }
+            }
+        }
         val okHttpClient = OkHttpClient.Builder()
+            .dns(iptvDns)
+            .retryOnConnectionFailure(true)
+            .connectTimeout(15, TimeUnit.SECONDS)
+            .readTimeout(30, TimeUnit.SECONDS)
             .addInterceptor { chain ->
                 val request = chain.request().newBuilder()
                     .header("User-Agent", "Lavf/60.3.100")
+                    .header("Connection", "keep-alive")
+                    .header("Accept", "*/*")
                     .build()
                 chain.proceed(request)
             }

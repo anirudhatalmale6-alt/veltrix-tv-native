@@ -630,12 +630,17 @@ class PlayerActivity : AppCompatActivity() {
                 .build()
 
             // Configure HTTP data source with long timeouts for IPTV
+            val defaultHeaders = mapOf(
+                "Connection" to "keep-alive",
+                "Accept" to "*/*"
+            )
             val httpDataSourceFactory = DefaultHttpDataSource.Factory()
                 .setConnectTimeoutMs(30_000)
                 .setReadTimeoutMs(60_000)
                 .setAllowCrossProtocolRedirects(true)
                 .setKeepPostFor302Redirects(true)
                 .setUserAgent("Lavf/60.3.100")
+                .setDefaultRequestProperties(defaultHeaders)
 
             val mediaSourceFactory = DefaultMediaSourceFactory(httpDataSourceFactory)
 

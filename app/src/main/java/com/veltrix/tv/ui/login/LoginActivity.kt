@@ -15,10 +15,8 @@ import com.veltrix.tv.util.toast
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
-import java.util.concurrent.TimeUnit
 import android.widget.Button
 import android.widget.EditText
 import android.widget.ProgressBar
@@ -100,16 +98,7 @@ class LoginActivity : AppCompatActivity() {
         lifecycleScope.launch {
             try {
                 val baseUrl = serverUrl.trimEnd('/') + "/"
-                val client = OkHttpClient.Builder()
-                    .connectTimeout(15, TimeUnit.SECONDS)
-                    .readTimeout(15, TimeUnit.SECONDS)
-                    .addInterceptor { chain ->
-                        val request = chain.request().newBuilder()
-                            .header("User-Agent", "Lavf/60.3.100")
-                            .build()
-                        chain.proceed(request)
-                    }
-                    .build()
+                val client = MainActivity.createHttpClient(15, 15)
 
                 val api = Retrofit.Builder()
                     .baseUrl(baseUrl)

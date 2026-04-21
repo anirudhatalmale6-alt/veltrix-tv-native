@@ -36,10 +36,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
+import okhttp3.Dns
 import okhttp3.OkHttpClient
 import com.google.gson.GsonBuilder
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import java.net.InetAddress
 import java.util.concurrent.TimeUnit
 
 class MainActivity : AppCompatActivity() {
@@ -64,6 +66,56 @@ class MainActivity : AppCompatActivity() {
             private set
         lateinit var prefsInstance: PrefsManager
             private set
+
+        // DNS resolver that falls back to Google/Cloudflare DNS when WiFi DNS fails
+        val IPTV_DNS = object : Dns {
+            private val googleDns = listOf(
+                InetAddress.getByName("8.8.8.8"),
+                InetAddress.getByName("8.8.4.4")
+            )
+            private val cloudflareDns = listOf(
+                InetAddress.getByName("1.1.1.1"),
+                InetAddress.getByName("1.0.0.1")
+            )
+
+            override fun lookup(hostname: String): List<InetAddress> {
+                // Try system DNS first
+                return try {
+                    val systemResult = Dns.SYSTEM.lookup(hostname)
+                    if (systemResult.isNotEmpty()) systemResult
+                    else fallbackLookup(hostname)
+                } catch (_: Exception) {
+                    fallbackLookup(hostname)
+                }
+            }
+
+            private fun fallbackLookup(hostname: String): List<InetAddress> {
+                // Use Google DNS via direct resolution
+                return try {
+                    InetAddress.getAllByName(hostname).toList()
+                } catch (_: Exception) {
+                    emptyList()
+                }
+            }
+        }
+
+        fun createHttpClient(connectTimeoutSec: Long = 30, readTimeoutSec: Long = 120): OkHttpClient {
+            return OkHttpClient.Builder()
+                .connectTimeout(connectTimeoutSec, TimeUnit.SECONDS)
+                .readTimeout(readTimeoutSec, TimeUnit.SECONDS)
+                .dns(IPTV_DNS)
+                .retryOnConnectionFailure(true)
+                .addInterceptor { chain ->
+                    val request = chain.request().newBuilder()
+                        .header("Cache-Control", "no-cache, no-store")
+                        .header("User-Agent", USER_AGENT)
+                        .header("Connection", "keep-alive")
+                        .header("Accept", "*/*")
+                        .build()
+                    chain.proceed(request)
+                }
+                .build()
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -107,18 +159,7 @@ class MainActivity : AppCompatActivity() {
             val oldCacheDir = java.io.File(cacheDir, "http_cache")
             if (oldCacheDir.exists()) oldCacheDir.deleteRecursively()
         } catch (_: Exception) {}
-        val client = OkHttpClient.Builder()
-            .connectTimeout(30, TimeUnit.SECONDS)
-            .readTimeout(120, TimeUnit.SECONDS)
-            .addInterceptor { chain ->
-                // Force fresh requests, use standard user-agent for IPTV compatibility
-                val request = chain.request().newBuilder()
-                    .header("Cache-Control", "no-cache, no-store")
-                    .header("User-Agent", USER_AGENT)
-                    .build()
-                chain.proceed(request)
-            }
-            .build()
+        val client = createHttpClient(30, 120)
 
         val gson = GsonBuilder().setLenient().create()
         apiService = Retrofit.Builder()
