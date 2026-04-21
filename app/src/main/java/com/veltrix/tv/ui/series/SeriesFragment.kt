@@ -1,10 +1,12 @@
 package com.veltrix.tv.ui.series
 
+import android.animation.ValueAnimator
 import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
 import androidx.fragment.app.Fragment
@@ -28,6 +30,7 @@ import kotlinx.coroutines.withContext
 
 class SeriesFragment : Fragment(), MainActivity.DpadNavigable {
 
+    private lateinit var categoryContainer: LinearLayout
     private lateinit var rvCategories: RecyclerView
     private lateinit var rvSeries: RecyclerView
     private lateinit var progressBar: ProgressBar
@@ -35,10 +38,20 @@ class SeriesFragment : Fragment(), MainActivity.DpadNavigable {
 
     private lateinit var categoryAdapter: CategoryAdapter
     private lateinit var seriesAdapter: SeriesAdapter
+    private var isCategoryVisible = true
+    private var categoryWidth = 0
 
     override fun canGoLeft(): Boolean {
         val focused = activity?.currentFocus ?: return false
-        return rvSeries.isAncestorOf(focused)
+        if (rvSeries.isAncestorOf(focused)) {
+            if (!isCategoryVisible) {
+                expandCategories()
+                rvCategories.post { rvCategories.getChildAt(0)?.requestFocus() }
+                return false
+            }
+            return true
+        }
+        return false
     }
 
     private fun RecyclerView.isAncestorOf(view: View): Boolean {
@@ -60,13 +73,71 @@ class SeriesFragment : Fragment(), MainActivity.DpadNavigable {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        categoryContainer = view.findViewById(R.id.categoryContainer)
         rvCategories = view.findViewById(R.id.rvCategories)
         rvSeries = view.findViewById(R.id.rvSeries)
         progressBar = view.findViewById(R.id.progressBar)
         tvEmpty = view.findViewById(R.id.tvEmpty)
 
         setupAdapters()
+        setupCategoryAutoHide()
         loadCategories()
+    }
+
+    private fun setupCategoryAutoHide() {
+        categoryContainer.post {
+            categoryWidth = categoryContainer.width
+        }
+
+        rvSeries.setOnFocusChangeListener { _, hasFocus ->
+            if (hasFocus && isCategoryVisible) collapseCategories()
+        }
+        rvSeries.addOnChildAttachStateChangeListener(object : RecyclerView.OnChildAttachStateChangeListener {
+            override fun onChildViewAttachedToWindow(view: View) {
+                view.setOnFocusChangeListener { _, hasFocus ->
+                    if (hasFocus && isCategoryVisible) collapseCategories()
+                }
+            }
+            override fun onChildViewDetachedFromWindow(view: View) {}
+        })
+
+        rvCategories.setOnFocusChangeListener { _, hasFocus ->
+            if (hasFocus && !isCategoryVisible) expandCategories()
+        }
+        rvCategories.addOnChildAttachStateChangeListener(object : RecyclerView.OnChildAttachStateChangeListener {
+            override fun onChildViewAttachedToWindow(view: View) {
+                view.setOnFocusChangeListener { _, hasFocus ->
+                    if (hasFocus && !isCategoryVisible) expandCategories()
+                }
+            }
+            override fun onChildViewDetachedFromWindow(view: View) {}
+        })
+    }
+
+    private fun collapseCategories() {
+        if (!isCategoryVisible) return
+        isCategoryVisible = false
+        val animator = ValueAnimator.ofInt(categoryWidth, 0)
+        animator.duration = 200
+        animator.addUpdateListener { anim ->
+            val params = categoryContainer.layoutParams
+            params.width = anim.animatedValue as Int
+            categoryContainer.layoutParams = params
+        }
+        animator.start()
+    }
+
+    private fun expandCategories() {
+        if (isCategoryVisible) return
+        isCategoryVisible = true
+        val animator = ValueAnimator.ofInt(0, categoryWidth)
+        animator.duration = 200
+        animator.addUpdateListener { anim ->
+            val params = categoryContainer.layoutParams
+            params.width = anim.animatedValue as Int
+            categoryContainer.layoutParams = params
+        }
+        animator.start()
     }
 
     private fun setupAdapters() {
@@ -103,8 +174,8 @@ class SeriesFragment : Fragment(), MainActivity.DpadNavigable {
     private fun calculateGridColumns(): Int {
         val displayMetrics = resources.displayMetrics
         val screenWidthDp = displayMetrics.widthPixels / displayMetrics.density
-        val availableWidth = screenWidthDp - 260 - 200 - 24
-        return (availableWidth / 162).toInt().coerceIn(3, 7)
+        val availableWidth = screenWidthDp - 260 - 24
+        return (availableWidth / 162).toInt().coerceIn(3, 8)
     }
 
     private fun toggleFavorite(series: SeriesItem) {
