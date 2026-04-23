@@ -266,7 +266,7 @@ class SearchFragment : Fragment() {
         val prefs = MainActivity.prefsInstance
         when (result.type) {
             "live" -> {
-                val streamUrl = "${prefs.getBaseUrl()}/live/${prefs.username}/${prefs.password}/${result.streamId}.ts"
+                val streamUrl = "${prefs.getBaseUrl()}/live/${prefs.username}/${prefs.password}/${result.streamId}.m3u8"
                 val intent = Intent(requireContext(), PlayerActivity::class.java).apply {
                     putExtra(PlayerActivity.EXTRA_STREAM_URL, streamUrl)
                     putExtra(PlayerActivity.EXTRA_CHANNEL_NAME, result.name)

@@ -534,7 +534,7 @@ class PlayerActivity : AppCompatActivity() {
         // Extract stream ID from URL
         return try {
             val parts = streamUrl.split("/")
-            val last = parts.last() // e.g., "12345.ts" or "12345.mp4"
+            val last = parts.last() // e.g., "12345.m3u8" or "12345.mp4"
             last.substringBefore(".").toIntOrNull()
         } catch (e: Exception) {
             null
@@ -765,7 +765,7 @@ class PlayerActivity : AppCompatActivity() {
         val prefs = MainActivity.prefsInstance
         val newStreamId = ids[currentIndex]
         channelName = names[currentIndex]
-        streamUrl = "${prefs.getBaseUrl()}/live/${prefs.username}/${prefs.password}/$newStreamId.ts"
+        streamUrl = "${prefs.getBaseUrl()}/live/${prefs.username}/${prefs.password}/$newStreamId.m3u8"
 
         tvChannelName.text = channelName
         showOverlay()

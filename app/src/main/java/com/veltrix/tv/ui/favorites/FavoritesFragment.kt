@@ -67,7 +67,7 @@ class FavoritesFragment : Fragment() {
 
         when (fav.type) {
             "live" -> {
-                val streamUrl = "${prefs.getBaseUrl()}/live/${prefs.username}/${prefs.password}/${fav.streamId}.ts"
+                val streamUrl = "${prefs.getBaseUrl()}/live/${prefs.username}/${prefs.password}/${fav.streamId}.m3u8"
                 val intent = Intent(requireContext(), PlayerActivity::class.java).apply {
                     putExtra(PlayerActivity.EXTRA_STREAM_URL, streamUrl)
                     putExtra(PlayerActivity.EXTRA_CHANNEL_NAME, fav.name)

@@ -248,7 +248,7 @@ class LiveFragment : Fragment(), MainActivity.DpadNavigable {
                     0 -> toggleFavorite(stream)
                     1 -> {
                         val prefs = MainActivity.prefsInstance
-                        val streamUrl = "${prefs.getBaseUrl()}/live/${prefs.username}/${prefs.password}/${stream.streamId}.ts"
+                        val streamUrl = "${prefs.getBaseUrl()}/live/${prefs.username}/${prefs.password}/${stream.streamId}.m3u8"
                         (activity as? MainActivity)?.startMiniPlayer(streamUrl, stream.name)
                     }
                 }
@@ -400,7 +400,7 @@ class LiveFragment : Fragment(), MainActivity.DpadNavigable {
         tvPreviewAudio.text = ""
 
         val prefs = MainActivity.prefsInstance
-        val streamUrl = "${prefs.getBaseUrl()}/live/${prefs.username}/${prefs.password}/${stream.streamId}.ts"
+        val streamUrl = "${prefs.getBaseUrl()}/live/${prefs.username}/${prefs.password}/${stream.streamId}.m3u8"
 
         previewPlayer?.release()
         previewLoading.visible()
@@ -614,7 +614,7 @@ class LiveFragment : Fragment(), MainActivity.DpadNavigable {
     private fun openPlayer(stream: LiveStream, position: Int) {
         try {
             val prefs = MainActivity.prefsInstance
-            val streamUrl = "${prefs.getBaseUrl()}/live/${prefs.username}/${prefs.password}/${stream.streamId}.ts"
+            val streamUrl = "${prefs.getBaseUrl()}/live/${prefs.username}/${prefs.password}/${stream.streamId}.m3u8"
 
             ChannelListHolder.set(allStreams)
 
