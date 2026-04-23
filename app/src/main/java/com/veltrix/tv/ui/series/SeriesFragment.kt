@@ -45,6 +45,9 @@ class SeriesFragment : Fragment(), MainActivity.DpadNavigable {
     private var isCategoryVisible = true
     private var categoryWidth = 0
     private var allSeriesCache = listOf<SeriesItem>()
+    private var searchWatcherAdded = false
+
+    override fun getMainContentView(): View = rvSeries
 
     override fun canGoLeft(): Boolean {
         val focused = activity?.currentFocus ?: return false
@@ -381,25 +384,28 @@ class SeriesFragment : Fragment(), MainActivity.DpadNavigable {
             }
         }
 
-        etSearchBar.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
-            override fun afterTextChanged(s: Editable?) {
-                val query = s?.toString()?.lowercase() ?: ""
-                if (query.length < 2) {
-                    seriesAdapter.submitList(allSeriesCache)
-                } else {
-                    val filtered = allSeriesCache.filter { it.name.lowercase().contains(query) }
-                    seriesAdapter.submitList(filtered)
-                    if (filtered.isEmpty()) {
-                        tvEmpty.text = "No series found for \"$query\""
-                        tvEmpty.visible()
+        if (!searchWatcherAdded) {
+            searchWatcherAdded = true
+            etSearchBar.addTextChangedListener(object : TextWatcher {
+                override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+                override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+                override fun afterTextChanged(s: Editable?) {
+                    val query = s?.toString()?.lowercase() ?: ""
+                    if (query.length < 2) {
+                        seriesAdapter.submitList(allSeriesCache)
                     } else {
-                        tvEmpty.gone()
+                        val filtered = allSeriesCache.filter { it.name.lowercase().contains(query) }
+                        seriesAdapter.submitList(filtered)
+                        if (filtered.isEmpty()) {
+                            tvEmpty.text = "No series found for \"$query\""
+                            tvEmpty.visible()
+                        } else {
+                            tvEmpty.gone()
+                        }
                     }
                 }
-            }
-        })
+            })
+        }
     }
 
     private fun hideSearchBar() {

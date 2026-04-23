@@ -3,12 +3,14 @@ package com.veltrix.tv.ui.main
 import android.net.Uri
 import android.os.Bundle
 import android.view.KeyEvent
+import android.view.View
 import android.widget.FrameLayout
 import android.widget.ImageButton
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
+import androidx.recyclerview.widget.RecyclerView
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
@@ -274,6 +276,15 @@ class MainActivity : AppCompatActivity() {
     private fun focusFirstInContent() {
         contentContainer.post {
             try {
+                // Ask fragment for its main content view (e.g. channel list, movie grid)
+                val frag = currentContentFragment
+                if (frag is DpadNavigable) {
+                    val mainView = frag.getMainContentView()
+                    if (mainView is RecyclerView && mainView.childCount > 0) {
+                        mainView.getChildAt(0)?.requestFocus()
+                        return@post
+                    }
+                }
                 val firstFocusable = contentContainer.findFocus()
                     ?: findFirstFocusable(contentContainer)
                 firstFocusable?.requestFocus()
@@ -493,5 +504,6 @@ class MainActivity : AppCompatActivity() {
     /** Interface for fragments that handle D-pad navigation */
     interface DpadNavigable {
         fun canGoLeft(): Boolean
+        fun getMainContentView(): View? = null
     }
 }

@@ -65,6 +65,9 @@ class VodFragment : Fragment(), MainActivity.DpadNavigable {
     private var isCategoryVisible = true
     private var categoryWidth = 0
     private var allVodCache = listOf<VodStream>()
+    private var searchWatcherAdded = false
+
+    override fun getMainContentView(): View = rvMovies
 
     override fun canGoLeft(): Boolean {
         val focused = activity?.currentFocus ?: return false
@@ -580,25 +583,28 @@ class VodFragment : Fragment(), MainActivity.DpadNavigable {
             }
         }
 
-        etSearchBar.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
-            override fun afterTextChanged(s: Editable?) {
-                val query = s?.toString()?.lowercase() ?: ""
-                if (query.length < 2) {
-                    vodAdapter.submitList(allVodCache)
-                } else {
-                    val filtered = allVodCache.filter { it.name.lowercase().contains(query) }
-                    vodAdapter.submitList(filtered)
-                    if (filtered.isEmpty()) {
-                        tvEmpty.text = "No movies found for \"$query\""
-                        tvEmpty.visible()
+        if (!searchWatcherAdded) {
+            searchWatcherAdded = true
+            etSearchBar.addTextChangedListener(object : TextWatcher {
+                override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+                override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+                override fun afterTextChanged(s: Editable?) {
+                    val query = s?.toString()?.lowercase() ?: ""
+                    if (query.length < 2) {
+                        vodAdapter.submitList(allVodCache)
                     } else {
-                        tvEmpty.gone()
+                        val filtered = allVodCache.filter { it.name.lowercase().contains(query) }
+                        vodAdapter.submitList(filtered)
+                        if (filtered.isEmpty()) {
+                            tvEmpty.text = "No movies found for \"$query\""
+                            tvEmpty.visible()
+                        } else {
+                            tvEmpty.gone()
+                        }
                     }
                 }
-            }
-        })
+            })
+        }
     }
 
     private fun hideSearchBar() {

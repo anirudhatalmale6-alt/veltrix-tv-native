@@ -72,6 +72,9 @@ class LiveFragment : Fragment(), MainActivity.DpadNavigable {
     private var categoryWidth = 0
     private var isFavoritesMode = false
     private var allLiveCache = listOf<LiveStream>()
+    private var searchWatcherAdded = false
+
+    override fun getMainContentView(): View = rvChannels
 
     override fun canGoLeft(): Boolean {
         val focused = activity?.currentFocus ?: return false
@@ -355,27 +358,30 @@ class LiveFragment : Fragment(), MainActivity.DpadNavigable {
             }
         }
 
-        etSearchBar.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
-            override fun afterTextChanged(s: Editable?) {
-                val query = s?.toString()?.lowercase() ?: ""
-                if (query.length < 2) {
-                    channelListAdapter.submitList(allLiveCache)
-                    allStreams = allLiveCache
-                } else {
-                    val filtered = allLiveCache.filter { it.name.lowercase().contains(query) }
-                    channelListAdapter.submitList(filtered)
-                    allStreams = filtered
-                    if (filtered.isEmpty()) {
-                        tvEmpty.text = "No channels found for \"$query\""
-                        tvEmpty.visible()
+        if (!searchWatcherAdded) {
+            searchWatcherAdded = true
+            etSearchBar.addTextChangedListener(object : TextWatcher {
+                override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+                override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+                override fun afterTextChanged(s: Editable?) {
+                    val query = s?.toString()?.lowercase() ?: ""
+                    if (query.length < 2) {
+                        channelListAdapter.submitList(allLiveCache)
+                        allStreams = allLiveCache
                     } else {
-                        tvEmpty.gone()
+                        val filtered = allLiveCache.filter { it.name.lowercase().contains(query) }
+                        channelListAdapter.submitList(filtered)
+                        allStreams = filtered
+                        if (filtered.isEmpty()) {
+                            tvEmpty.text = "No channels found for \"$query\""
+                            tvEmpty.visible()
+                        } else {
+                            tvEmpty.gone()
+                        }
                     }
                 }
-            }
-        })
+            })
+        }
     }
 
     private fun hideSearchBar() {
