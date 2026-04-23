@@ -645,9 +645,20 @@ class LiveFragment : Fragment(), MainActivity.DpadNavigable {
         }
     }
 
+    override fun onPause() {
+        super.onPause()
+        previewPlayer?.pause()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        previewPlayer?.play()
+    }
+
     override fun onDestroyView() {
         super.onDestroyView()
         previewPlayer?.release()
         previewPlayer = null
+        allLiveCache = emptyList()
     }
 }

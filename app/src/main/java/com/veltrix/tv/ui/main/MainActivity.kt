@@ -144,7 +144,8 @@ class MainActivity : AppCompatActivity() {
 
         initApi()
         setupSidebar()
-        preloadSearchData()
+        // Don't preload search data at startup - too much memory for TV
+        // Search will load data on-demand when user opens it
         debug("Ready. Use remote to navigate.")
     }
 

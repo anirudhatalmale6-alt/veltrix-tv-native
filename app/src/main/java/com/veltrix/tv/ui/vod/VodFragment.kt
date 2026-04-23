@@ -611,4 +611,10 @@ class VodFragment : Fragment(), MainActivity.DpadNavigable {
         etSearchBar.gone()
         etSearchBar.setText("")
     }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        detailLoadJob?.cancel()
+        allVodCache = emptyList()
+    }
 }

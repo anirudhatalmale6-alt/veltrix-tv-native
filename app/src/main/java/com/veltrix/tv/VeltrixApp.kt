@@ -53,7 +53,7 @@ class VeltrixApp : Application() {
             .okHttpClient(okHttpClient)
             .memoryCache {
                 MemoryCache.Builder(this)
-                    .maxSizePercent(0.25) // 25% of app memory
+                    .maxSizePercent(0.10) // 10% of app memory (reduced for TV)
                     .build()
             }
             .diskCache {

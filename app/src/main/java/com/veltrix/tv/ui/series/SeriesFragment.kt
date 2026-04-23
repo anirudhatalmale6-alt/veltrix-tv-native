@@ -412,4 +412,9 @@ class SeriesFragment : Fragment(), MainActivity.DpadNavigable {
         etSearchBar.gone()
         etSearchBar.setText("")
     }
+
+    override fun onDestroyView() {
+        super.onDestroyView()
+        allSeriesCache = emptyList()
+    }
 }

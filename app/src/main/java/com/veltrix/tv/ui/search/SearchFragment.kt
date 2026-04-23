@@ -17,9 +17,6 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.veltrix.tv.R
 import com.veltrix.tv.data.SearchDataCache
-import com.veltrix.tv.data.models.LiveStream
-import com.veltrix.tv.data.models.VodStream
-import com.veltrix.tv.data.models.SeriesItem
 import com.veltrix.tv.ui.main.MainActivity
 import com.veltrix.tv.ui.player.PlayerActivity
 import com.veltrix.tv.ui.series.SeriesDetailActivity
@@ -33,7 +30,6 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
 
 class SearchFragment : Fragment() {
@@ -50,12 +46,6 @@ class SearchFragment : Fragment() {
     private var searchJob: Job? = null
     private var loadJob: Job? = null
     private var currentFilter = "all"
-
-    // Cached data for searching
-    private var cachedLive = listOf<LiveStream>()
-    private var cachedVod = listOf<VodStream>()
-    private var cachedSeries = listOf<SeriesItem>()
-    private var isDataLoaded = false
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -80,71 +70,40 @@ class SearchFragment : Fragment() {
 
         setupTabs()
         setupSearch()
-        preloadData()
+        ensureDataLoaded()
     }
 
-    private fun preloadData() {
-        // Use global cache that was preloaded at app startup
+    private fun ensureDataLoaded() {
         if (SearchDataCache.isLoaded) {
-            cachedLive = SearchDataCache.liveStreams
-            cachedVod = SearchDataCache.vodStreams
-            cachedSeries = SearchDataCache.seriesItems
-            isDataLoaded = true
             progressBar.gone()
-
-            // If cache has gaps, reload missing data in background
-            if (cachedLive.isEmpty() || cachedVod.isEmpty() || cachedSeries.isEmpty()) {
-                val parts = mutableListOf<String>()
-                if (cachedLive.isNotEmpty()) parts.add("${cachedLive.size} channels")
-                if (cachedVod.isNotEmpty()) parts.add("${cachedVod.size} movies")
-                if (cachedSeries.isNotEmpty()) parts.add("${cachedSeries.size} series")
-                tvEmpty.text = if (parts.isEmpty()) "Loading data..." else "Search ${parts.joinToString(", ")}, loading more..."
-                tvEmpty.visible()
-                loadMissingData()
-                return
-            }
-
-            tvEmpty.text = "Search ${cachedLive.size} channels, ${cachedVod.size} movies, ${cachedSeries.size} series"
-            tvEmpty.visible()
+            updateStatusText()
             return
         }
 
-        // Cache not ready yet - load directly
         progressBar.visible()
         tvEmpty.gone()
 
         loadJob = viewLifecycleOwner.lifecycleScope.launch {
-            // Wait briefly for global cache (max 10s)
+            // Wait briefly for global cache if it's loading (max 10s)
             var waited = 0
             while (SearchDataCache.isLoading && !SearchDataCache.isLoaded && waited < 10_000) {
                 delay(500)
                 waited += 500
             }
 
-            if (SearchDataCache.isLoaded) {
-                cachedLive = SearchDataCache.liveStreams
-                cachedVod = SearchDataCache.vodStreams
-                cachedSeries = SearchDataCache.seriesItems
-                isDataLoaded = true
-            } else {
-                // Load directly ourselves
-                loadAllData()
+            if (!SearchDataCache.isLoaded) {
+                loadDataIntoCache()
             }
 
             if (!isAdded) return@launch
             progressBar.gone()
             updateStatusText()
-
-            // If anything is still missing, retry once more after a delay
-            if (cachedLive.isEmpty() || cachedVod.isEmpty() || cachedSeries.isEmpty()) {
-                delay(3000)
-                if (isAdded) loadMissingData()
-            }
         }
     }
 
-    private suspend fun loadAllData() = coroutineScope {
+    private suspend fun loadDataIntoCache() = coroutineScope {
         val prefs = MainActivity.prefsInstance
+        SearchDataCache.isLoading = true
         try {
             val liveJob = async(Dispatchers.IO) {
                 withTimeoutOrNull(60_000) {
@@ -164,88 +123,33 @@ class SearchFragment : Fragment() {
                     catch (_: Exception) { null }
                 } ?: emptyList()
             }
-            cachedLive = liveJob.await()
-            cachedVod = vodJob.await()
-            cachedSeries = seriesJob.await()
+            val live = liveJob.await()
+            val vod = vodJob.await()
+            val series = seriesJob.await()
 
-            // Update global cache
-            if (cachedLive.isNotEmpty()) SearchDataCache.liveStreams = cachedLive
-            if (cachedVod.isNotEmpty()) SearchDataCache.vodStreams = cachedVod
-            if (cachedSeries.isNotEmpty()) SearchDataCache.seriesItems = cachedSeries
-            if (cachedLive.isNotEmpty() || cachedVod.isNotEmpty() || cachedSeries.isNotEmpty()) {
+            if (live.isNotEmpty()) SearchDataCache.liveStreams = live
+            if (vod.isNotEmpty()) SearchDataCache.vodStreams = vod
+            if (series.isNotEmpty()) SearchDataCache.seriesItems = series
+            if (live.isNotEmpty() || vod.isNotEmpty() || series.isNotEmpty()) {
                 SearchDataCache.isLoaded = true
             }
-            isDataLoaded = true
         } catch (_: Exception) {
-            isDataLoaded = true
+        } finally {
+            SearchDataCache.isLoading = false
         }
     }
 
     private fun updateStatusText() {
         if (!isAdded) return
-        if (cachedLive.isEmpty() && cachedVod.isEmpty() && cachedSeries.isEmpty()) {
+        val live = SearchDataCache.liveStreams.size
+        val vod = SearchDataCache.vodStreams.size
+        val series = SearchDataCache.seriesItems.size
+        if (live == 0 && vod == 0 && series == 0) {
             tvEmpty.text = "Error loading data. Try again later."
         } else {
-            tvEmpty.text = "Search ${cachedLive.size} channels, ${cachedVod.size} movies, ${cachedSeries.size} series"
+            tvEmpty.text = "Search $live channels, $vod movies, $series series"
         }
         tvEmpty.visible()
-    }
-
-    private fun loadMissingData() {
-        val prefs = MainActivity.prefsInstance
-        viewLifecycleOwner.lifecycleScope.launch {
-            try {
-                if (cachedLive.isEmpty()) {
-                    val live = async(Dispatchers.IO) {
-                        withTimeoutOrNull(60_000) {
-                            try { MainActivity.apiService.getLiveStreams(prefs.username, prefs.password) }
-                            catch (e: Exception) {
-                                android.util.Log.e("VeltrixTV", "Search live reload error", e)
-                                null
-                            }
-                        } ?: emptyList()
-                    }
-                    cachedLive = live.await()
-                    if (cachedLive.isNotEmpty()) SearchDataCache.liveStreams = cachedLive
-                    android.util.Log.d("VeltrixTV", "Search live reloaded: ${cachedLive.size}")
-                }
-                if (cachedVod.isEmpty()) {
-                    val vod = async(Dispatchers.IO) {
-                        withTimeoutOrNull(90_000) {
-                            try { MainActivity.apiService.getVodStreams(prefs.username, prefs.password) }
-                            catch (e: Exception) {
-                                android.util.Log.e("VeltrixTV", "Search VOD reload error", e)
-                                null
-                            }
-                        } ?: emptyList()
-                    }
-                    cachedVod = vod.await()
-                    if (cachedVod.isNotEmpty()) SearchDataCache.vodStreams = cachedVod
-                    android.util.Log.d("VeltrixTV", "Search VOD reloaded: ${cachedVod.size}")
-                }
-                if (cachedSeries.isEmpty()) {
-                    val series = async(Dispatchers.IO) {
-                        withTimeoutOrNull(90_000) {
-                            try { MainActivity.apiService.getSeries(prefs.username, prefs.password) }
-                            catch (e: Exception) {
-                                android.util.Log.e("VeltrixTV", "Search series reload error", e)
-                                null
-                            }
-                        } ?: emptyList()
-                    }
-                    cachedSeries = series.await()
-                    if (cachedSeries.isNotEmpty()) SearchDataCache.seriesItems = cachedSeries
-                    android.util.Log.d("VeltrixTV", "Search series reloaded: ${cachedSeries.size}")
-                }
-                // Update global loaded flag
-                if (cachedLive.isNotEmpty() || cachedVod.isNotEmpty() || cachedSeries.isNotEmpty()) {
-                    SearchDataCache.isLoaded = true
-                }
-            } catch (_: Exception) {}
-
-            if (!isAdded) return@launch
-            updateStatusText()
-        }
     }
 
     private fun setupTabs() {
@@ -300,16 +204,16 @@ class SearchFragment : Fragment() {
     private fun performSearch(query: String) {
         if (query.length < 2) {
             rvResults.adapter = null
-            if (isDataLoaded) {
-                tvEmpty.text = "Search ${cachedLive.size} channels, ${cachedVod.size} movies, ${cachedSeries.size} series"
+            if (SearchDataCache.isLoaded) {
+                updateStatusText()
             } else {
                 tvEmpty.text = "Loading data..."
+                tvEmpty.visible()
             }
-            tvEmpty.visible()
             return
         }
 
-        if (!isDataLoaded) {
+        if (!SearchDataCache.isLoaded) {
             tvEmpty.text = "Still loading data, please wait..."
             tvEmpty.visible()
             return
@@ -318,18 +222,18 @@ class SearchFragment : Fragment() {
         val q = query.lowercase()
         val results = mutableListOf<SearchResult>()
 
-        // Search live channels
         if (currentFilter == "all" || currentFilter == "live") {
-            cachedLive.filter { it.name.lowercase().contains(q) }
+            SearchDataCache.liveStreams.asSequence()
+                .filter { it.name.lowercase().contains(q) }
                 .take(50)
                 .mapTo(results) {
                     SearchResult(it.name, it.streamIcon, "Live", streamId = it.streamId, type = "live")
                 }
         }
 
-        // Search movies
         if (currentFilter == "all" || currentFilter == "vod") {
-            cachedVod.filter { it.name.lowercase().contains(q) }
+            SearchDataCache.vodStreams.asSequence()
+                .filter { it.name.lowercase().contains(q) }
                 .take(50)
                 .mapTo(results) {
                     SearchResult(it.name, it.streamIcon, "Movie", streamId = it.streamId, type = "vod",
@@ -337,9 +241,9 @@ class SearchFragment : Fragment() {
                 }
         }
 
-        // Search series
         if (currentFilter == "all" || currentFilter == "series") {
-            cachedSeries.filter { it.name.lowercase().contains(q) }
+            SearchDataCache.seriesItems.asSequence()
+                .filter { it.name.lowercase().contains(q) }
                 .take(50)
                 .mapTo(results) {
                     SearchResult(it.name, it.cover, "Series", seriesId = it.seriesId, type = "series")
