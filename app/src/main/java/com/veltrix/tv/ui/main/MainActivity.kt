@@ -15,7 +15,7 @@ import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
-import androidx.media3.datasource.DefaultHttpDataSource
+import androidx.media3.datasource.okhttp.OkHttpDataSource
 import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
@@ -434,11 +434,8 @@ class MainActivity : AppCompatActivity() {
             val loadControl = DefaultLoadControl.Builder()
                 .setBufferDurationsMs(60_000, 120_000, 5_000, 10_000)
                 .build()
-            val httpDataSourceFactory = DefaultHttpDataSource.Factory()
-                .setConnectTimeoutMs(30_000)
-                .setReadTimeoutMs(60_000)
-                .setAllowCrossProtocolRedirects(true)
-                .setUserAgent(USER_AGENT)
+            val streamClient = createHttpClient(30, 60)
+            val httpDataSourceFactory = OkHttpDataSource.Factory(streamClient)
             val mediaSourceFactory = DefaultMediaSourceFactory(httpDataSourceFactory)
 
             miniPlayer = ExoPlayer.Builder(this)

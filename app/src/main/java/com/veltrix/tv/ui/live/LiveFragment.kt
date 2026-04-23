@@ -19,7 +19,7 @@ import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
-import androidx.media3.datasource.DefaultHttpDataSource
+import androidx.media3.datasource.okhttp.OkHttpDataSource
 import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
@@ -409,16 +409,8 @@ class LiveFragment : Fragment(), MainActivity.DpadNavigable {
             .setBufferDurationsMs(10_000, 30_000, 2_000, 5_000)
             .build()
 
-        val defaultHeaders = mapOf(
-            "Connection" to "keep-alive",
-            "Accept" to "*/*"
-        )
-        val httpDataSourceFactory = DefaultHttpDataSource.Factory()
-            .setConnectTimeoutMs(15_000)
-            .setReadTimeoutMs(30_000)
-            .setAllowCrossProtocolRedirects(true)
-            .setUserAgent("Lavf/60.3.100")
-            .setDefaultRequestProperties(defaultHeaders)
+        val streamClient = MainActivity.createHttpClient(15, 30)
+        val httpDataSourceFactory = OkHttpDataSource.Factory(streamClient)
 
         val mediaSourceFactory = DefaultMediaSourceFactory(httpDataSourceFactory)
 

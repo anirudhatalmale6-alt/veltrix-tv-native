@@ -24,7 +24,7 @@ import androidx.media3.common.MimeTypes
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.TrackSelectionOverride
-import androidx.media3.datasource.DefaultHttpDataSource
+import androidx.media3.datasource.okhttp.OkHttpDataSource
 import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
@@ -629,18 +629,9 @@ class PlayerActivity : AppCompatActivity() {
                 )
                 .build()
 
-            // Configure HTTP data source with long timeouts for IPTV
-            val defaultHeaders = mapOf(
-                "Connection" to "keep-alive",
-                "Accept" to "*/*"
-            )
-            val httpDataSourceFactory = DefaultHttpDataSource.Factory()
-                .setConnectTimeoutMs(30_000)
-                .setReadTimeoutMs(60_000)
-                .setAllowCrossProtocolRedirects(true)
-                .setKeepPostFor302Redirects(true)
-                .setUserAgent("Lavf/60.3.100")
-                .setDefaultRequestProperties(defaultHeaders)
+            // Use OkHttp for streaming (same client as API - includes DNS-over-HTTPS, user-agent, keep-alive)
+            val streamClient = MainActivity.createHttpClient(30, 60)
+            val httpDataSourceFactory = OkHttpDataSource.Factory(streamClient)
 
             val mediaSourceFactory = DefaultMediaSourceFactory(httpDataSourceFactory)
 
