@@ -409,7 +409,7 @@ class LiveFragment : Fragment(), MainActivity.DpadNavigable {
             .setBufferDurationsMs(10_000, 30_000, 2_000, 5_000)
             .build()
 
-        val streamClient = MainActivity.createHttpClient(15, 30)
+        val streamClient = MainActivity.createStreamClient(15, 30)
         val httpDataSourceFactory = OkHttpDataSource.Factory(streamClient)
 
         val mediaSourceFactory = DefaultMediaSourceFactory(httpDataSourceFactory)

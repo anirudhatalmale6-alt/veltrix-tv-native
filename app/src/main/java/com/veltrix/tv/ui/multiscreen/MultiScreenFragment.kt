@@ -187,7 +187,7 @@ class MultiScreenFragment : Fragment() {
             .setBufferDurationsMs(30_000, 60_000, 3_000, 5_000)
             .build()
 
-        val streamClient = MainActivity.createHttpClient(30, 60)
+        val streamClient = MainActivity.createStreamClient(30, 60)
         val httpDataSourceFactory = androidx.media3.datasource.okhttp.OkHttpDataSource.Factory(streamClient)
 
         val mediaSourceFactory = DefaultMediaSourceFactory(httpDataSourceFactory)

@@ -629,8 +629,7 @@ class PlayerActivity : AppCompatActivity() {
                 )
                 .build()
 
-            // Use OkHttp for streaming (same client as API - includes DNS-over-HTTPS, user-agent, keep-alive)
-            val streamClient = MainActivity.createHttpClient(30, 60)
+            val streamClient = MainActivity.createStreamClient(30, 60)
             val httpDataSourceFactory = OkHttpDataSource.Factory(streamClient)
 
             val mediaSourceFactory = DefaultMediaSourceFactory(httpDataSourceFactory)
@@ -685,11 +684,16 @@ class PlayerActivity : AppCompatActivity() {
                     }
 
                     override fun onPlayerError(error: PlaybackException) {
-                        android.util.Log.e("VeltrixTV", "Player error: ${error.errorCodeName}", error)
+                        val cause = error.cause
+                        val errorDetail = when {
+                            cause is java.io.IOException -> "Network: ${cause.message}"
+                            cause?.cause is java.io.IOException -> "IO: ${cause.cause?.message}"
+                            else -> error.errorCodeName
+                        }
+                        android.util.Log.e("VeltrixTV", "Player error: $errorDetail", error)
                         if (streamType == "live" && retryCount < maxRetries) {
-                            // Auto-retry for live streams
                             retryCount++
-                            tvError.text = "Reconnecting... ($retryCount/$maxRetries)"
+                            tvError.text = "Retry $retryCount/$maxRetries: $errorDetail"
                             tvError.visible()
                             progressBar.visible()
                             handler.postDelayed({
@@ -700,9 +704,9 @@ class PlayerActivity : AppCompatActivity() {
                             progressBar.gone()
                             tvError.visible()
                             tvError.text = if (retryCount >= maxRetries) {
-                                "Stream lost. Press OK to retry."
+                                "Error: $errorDetail\nPress OK to retry."
                             } else {
-                                getString(R.string.player_error)
+                                "Error: $errorDetail"
                             }
                         }
                     }

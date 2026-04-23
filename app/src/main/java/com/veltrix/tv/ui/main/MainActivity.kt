@@ -141,6 +141,26 @@ class MainActivity : AppCompatActivity() {
                 }
                 .build()
         }
+
+        fun createStreamClient(connectTimeoutSec: Long = 30, readTimeoutSec: Long = 60): OkHttpClient {
+            return OkHttpClient.Builder()
+                .connectTimeout(connectTimeoutSec, TimeUnit.SECONDS)
+                .readTimeout(readTimeoutSec, TimeUnit.SECONDS)
+                .dns(IPTV_DNS)
+                .retryOnConnectionFailure(true)
+                .followRedirects(true)
+                .followSslRedirects(true)
+                .addInterceptor { chain ->
+                    val request = chain.request().newBuilder()
+                        .header("User-Agent", USER_AGENT)
+                        .header("Connection", "keep-alive")
+                        .header("Accept", "*/*")
+                        .header("Referer", chain.request().url.scheme + "://" + chain.request().url.host + "/")
+                        .build()
+                    chain.proceed(request)
+                }
+                .build()
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -434,7 +454,7 @@ class MainActivity : AppCompatActivity() {
             val loadControl = DefaultLoadControl.Builder()
                 .setBufferDurationsMs(60_000, 120_000, 5_000, 10_000)
                 .build()
-            val streamClient = createHttpClient(30, 60)
+            val streamClient = createStreamClient(30, 60)
             val httpDataSourceFactory = OkHttpDataSource.Factory(streamClient)
             val mediaSourceFactory = DefaultMediaSourceFactory(httpDataSourceFactory)
 
