@@ -39,10 +39,13 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import okhttp3.Dns
+import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.OkHttpClient
+import okhttp3.dnsoverhttps.DnsOverHttps
 import com.google.gson.GsonBuilder
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import java.net.Inet4Address
 import java.net.InetAddress
 import java.util.concurrent.TimeUnit
 
@@ -69,35 +72,55 @@ class MainActivity : AppCompatActivity() {
         lateinit var prefsInstance: PrefsManager
             private set
 
-        // DNS resolver that falls back to Google/Cloudflare DNS when WiFi DNS fails
-        val IPTV_DNS = object : Dns {
-            private val googleDns = listOf(
-                InetAddress.getByName("8.8.8.8"),
-                InetAddress.getByName("8.8.4.4")
-            )
-            private val cloudflareDns = listOf(
-                InetAddress.getByName("1.1.1.1"),
-                InetAddress.getByName("1.0.0.1")
-            )
+        // DNS-over-HTTPS resolvers for WiFi networks where ISP DNS blocks IPTV domains
+        private val bootstrapClient by lazy { OkHttpClient.Builder().build() }
+        private val googleDoH by lazy {
+            DnsOverHttps.Builder()
+                .client(bootstrapClient)
+                .url("https://dns.google/dns-query".toHttpUrl())
+                .bootstrapDnsHosts(
+                    InetAddress.getByName("8.8.8.8"),
+                    InetAddress.getByName("8.8.4.4")
+                )
+                .build()
+        }
+        private val cloudflareDoH by lazy {
+            DnsOverHttps.Builder()
+                .client(bootstrapClient)
+                .url("https://cloudflare-dns.com/dns-query".toHttpUrl())
+                .bootstrapDnsHosts(
+                    InetAddress.getByName("1.1.1.1"),
+                    InetAddress.getByName("1.0.0.1")
+                )
+                .build()
+        }
 
+        private fun preferIPv4(addresses: List<InetAddress>): List<InetAddress> {
+            val ipv4 = addresses.filter { it is Inet4Address }
+            return if (ipv4.isNotEmpty()) ipv4 else addresses
+        }
+
+        val IPTV_DNS = object : Dns {
             override fun lookup(hostname: String): List<InetAddress> {
                 // Try system DNS first
-                return try {
+                try {
                     val systemResult = Dns.SYSTEM.lookup(hostname)
-                    if (systemResult.isNotEmpty()) systemResult
-                    else fallbackLookup(hostname)
-                } catch (_: Exception) {
-                    fallbackLookup(hostname)
-                }
-            }
+                    if (systemResult.isNotEmpty()) return preferIPv4(systemResult)
+                } catch (_: Exception) {}
 
-            private fun fallbackLookup(hostname: String): List<InetAddress> {
-                // Use Google DNS via direct resolution
-                return try {
-                    InetAddress.getAllByName(hostname).toList()
-                } catch (_: Exception) {
-                    emptyList()
-                }
+                // WiFi DNS failed - try Google DNS-over-HTTPS
+                try {
+                    val googleResult = googleDoH.lookup(hostname)
+                    if (googleResult.isNotEmpty()) return preferIPv4(googleResult)
+                } catch (_: Exception) {}
+
+                // Last resort - Cloudflare DNS-over-HTTPS
+                try {
+                    val cfResult = cloudflareDoH.lookup(hostname)
+                    if (cfResult.isNotEmpty()) return preferIPv4(cfResult)
+                } catch (_: Exception) {}
+
+                return emptyList()
             }
         }
 

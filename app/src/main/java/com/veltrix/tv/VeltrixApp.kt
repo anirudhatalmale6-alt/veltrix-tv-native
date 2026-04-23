@@ -7,8 +7,11 @@ import coil.ImageLoader
 import coil.disk.DiskCache
 import coil.memory.MemoryCache
 import okhttp3.Dns
+import okhttp3.HttpUrl.Companion.toHttpUrl
 import okhttp3.OkHttpClient
+import okhttp3.dnsoverhttps.DnsOverHttps
 import java.io.File
+import java.net.Inet4Address
 import java.net.InetAddress
 import java.util.concurrent.TimeUnit
 import java.io.PrintWriter
@@ -22,15 +25,39 @@ class VeltrixApp : Application() {
     override fun onCreate() {
         super.onCreate()
 
-        // OkHttp client with IPTV-compatible user-agent + DNS fallback for image loading
+        // DNS-over-HTTPS for WiFi networks where ISP DNS blocks IPTV domains
+        val bootstrapClient = OkHttpClient.Builder().build()
+        val googleDoH = DnsOverHttps.Builder()
+            .client(bootstrapClient)
+            .url("https://dns.google/dns-query".toHttpUrl())
+            .bootstrapDnsHosts(InetAddress.getByName("8.8.8.8"), InetAddress.getByName("8.8.4.4"))
+            .build()
+        val cloudflareDoH = DnsOverHttps.Builder()
+            .client(bootstrapClient)
+            .url("https://cloudflare-dns.com/dns-query".toHttpUrl())
+            .bootstrapDnsHosts(InetAddress.getByName("1.1.1.1"), InetAddress.getByName("1.0.0.1"))
+            .build()
+
         val iptvDns = object : Dns {
+            private fun preferIPv4(addrs: List<InetAddress>): List<InetAddress> {
+                val v4 = addrs.filter { it is Inet4Address }
+                return if (v4.isNotEmpty()) v4 else addrs
+            }
+
             override fun lookup(hostname: String): List<InetAddress> {
-                return try {
-                    val result = Dns.SYSTEM.lookup(hostname)
-                    if (result.isNotEmpty()) result else InetAddress.getAllByName(hostname).toList()
-                } catch (_: Exception) {
-                    try { InetAddress.getAllByName(hostname).toList() } catch (_: Exception) { emptyList() }
-                }
+                try {
+                    val r = Dns.SYSTEM.lookup(hostname)
+                    if (r.isNotEmpty()) return preferIPv4(r)
+                } catch (_: Exception) {}
+                try {
+                    val r = googleDoH.lookup(hostname)
+                    if (r.isNotEmpty()) return preferIPv4(r)
+                } catch (_: Exception) {}
+                try {
+                    val r = cloudflareDoH.lookup(hostname)
+                    if (r.isNotEmpty()) return preferIPv4(r)
+                } catch (_: Exception) {}
+                return emptyList()
             }
         }
         val okHttpClient = OkHttpClient.Builder()
