@@ -160,7 +160,10 @@ class LiveFragment : Fragment(), MainActivity.DpadNavigable {
         }
         rvCategories.addOnChildAttachStateChangeListener(object : RecyclerView.OnChildAttachStateChangeListener {
             override fun onChildViewAttachedToWindow(view: View) {
-                view.setOnFocusChangeListener { _, hasFocus ->
+                view.nextFocusRightId = R.id.rvChannels
+                val adapterListener = view.onFocusChangeListener
+                view.setOnFocusChangeListener { v, hasFocus ->
+                    adapterListener?.onFocusChange(v, hasFocus)
                     if (hasFocus && !isCategoryVisible) expandCategories()
                 }
             }
