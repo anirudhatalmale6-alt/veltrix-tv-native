@@ -7,7 +7,7 @@ import android.view.animation.DecelerateInterpolator
 
 object FocusHighlightHelper {
 
-    private const val SCALE_FOCUSED = 1.05f
+    private const val SCALE_FOCUSED = 1.1f
     private const val SCALE_NORMAL = 1.0f
     private const val ANIMATION_DURATION = 150L
 

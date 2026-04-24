@@ -6,7 +6,8 @@
     android:background="@drawable/card_bg"
     android:focusable="true"
     android:focusableInTouchMode="true"
-    android:clipChildren="true">
+    android:clipChildren="true"
+    android:foreground="@drawable/poster_focus_overlay">
 
     <ImageView
         android:id="@+id/ivPoster"
