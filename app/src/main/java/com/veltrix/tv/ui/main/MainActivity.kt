@@ -432,13 +432,30 @@ class MainActivity : AppCompatActivity() {
             AlertDialog.Builder(this)
                 .setTitle(getString(R.string.exit_confirm))
                 .setPositiveButton(R.string.yes) { _, _ ->
-                    exitConfirmed = true
-                    finish()
+                    exitApp()
                 }
                 .setNegativeButton(R.string.no, null)
                 .show()
         } catch (e: Exception) {
             debug("Dialog error: ${e.message}")
+        }
+    }
+
+    private fun exitApp() {
+        try {
+            handler.removeCallbacksAndMessages(null)
+            closeMiniPlayer()
+            SearchDataCache.liveStreams = emptyList()
+            SearchDataCache.vodStreams = emptyList()
+            SearchDataCache.seriesItems = emptyList()
+            SearchDataCache.isLoaded = false
+            SearchDataCache.isLoading = false
+            exitConfirmed = true
+            finishAffinity()
+            android.os.Process.killProcess(android.os.Process.myPid())
+        } catch (_: Exception) {
+            exitConfirmed = true
+            finish()
         }
     }
 
@@ -538,8 +555,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
-        super.onDestroy()
+        handler.removeCallbacksAndMessages(null)
         closeMiniPlayer()
+        super.onDestroy()
     }
 
     /** Interface for fragments that handle D-pad navigation */
