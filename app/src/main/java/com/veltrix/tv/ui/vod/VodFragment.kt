@@ -177,15 +177,27 @@ class VodFragment : Fragment(), MainActivity.DpadNavigable {
         }
         rvCategories.addOnChildAttachStateChangeListener(object : RecyclerView.OnChildAttachStateChangeListener {
             override fun onChildViewAttachedToWindow(view: View) {
-                view.nextFocusRightId = R.id.rvMovies
                 val adapterListener = view.onFocusChangeListener
                 view.setOnFocusChangeListener { v, hasFocus ->
                     adapterListener?.onFocusChange(v, hasFocus)
                     if (hasFocus && !isCategoryVisible) expandCategories()
                 }
+                view.setOnKeyListener { _, keyCode, event ->
+                    if (keyCode == android.view.KeyEvent.KEYCODE_DPAD_RIGHT && event.action == android.view.KeyEvent.ACTION_DOWN) {
+                        focusPosterGrid()
+                        true
+                    } else false
+                }
             }
             override fun onChildViewDetachedFromWindow(view: View) {}
         })
+    }
+
+    private fun focusPosterGrid() {
+        val lm = rvMovies.layoutManager as? GridLayoutManager
+        val firstVisible = lm?.findFirstVisibleItemPosition() ?: 0
+        val vh = rvMovies.findViewHolderForAdapterPosition(firstVisible)
+        vh?.itemView?.requestFocus() ?: rvMovies.getChildAt(0)?.requestFocus()
     }
 
     private fun collapseCategories() {

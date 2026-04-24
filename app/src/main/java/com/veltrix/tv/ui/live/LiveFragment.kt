@@ -159,11 +159,16 @@ class LiveFragment : Fragment(), MainActivity.DpadNavigable {
         }
         rvCategories.addOnChildAttachStateChangeListener(object : RecyclerView.OnChildAttachStateChangeListener {
             override fun onChildViewAttachedToWindow(view: View) {
-                view.nextFocusRightId = R.id.rvChannels
                 val adapterListener = view.onFocusChangeListener
                 view.setOnFocusChangeListener { v, hasFocus ->
                     adapterListener?.onFocusChange(v, hasFocus)
                     if (hasFocus && !isCategoryVisible) expandCategories()
+                }
+                view.setOnKeyListener { _, keyCode, event ->
+                    if (keyCode == android.view.KeyEvent.KEYCODE_DPAD_RIGHT && event.action == android.view.KeyEvent.ACTION_DOWN) {
+                        rvChannels.getChildAt(0)?.requestFocus()
+                        true
+                    } else false
                 }
             }
             override fun onChildViewDetachedFromWindow(view: View) {}
