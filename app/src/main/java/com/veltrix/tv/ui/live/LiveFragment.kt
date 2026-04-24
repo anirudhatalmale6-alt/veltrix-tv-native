@@ -78,15 +78,14 @@ class LiveFragment : Fragment(), MainActivity.DpadNavigable {
 
     override fun canGoLeft(): Boolean {
         val focused = activity?.currentFocus ?: return false
-        if (rvChannels.isAncestorOf(focused)) {
-            if (!isCategoryVisible) {
-                expandCategories()
-                rvCategories.post { rvCategories.getChildAt(0)?.requestFocus() }
-                return false
-            }
-            return true
+        if (!rvChannels.isAncestorOf(focused)) return false
+
+        if (!isCategoryVisible) expandCategories()
+        rvCategories.post {
+            val sel = rvCategories.findViewHolderForAdapterPosition(categoryAdapter.selectedPosition)
+            (sel?.itemView ?: rvCategories.getChildAt(0))?.requestFocus()
         }
-        return false
+        return true
     }
 
     private fun RecyclerView.isAncestorOf(view: View): Boolean {

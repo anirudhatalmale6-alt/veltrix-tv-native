@@ -382,7 +382,7 @@ class MainActivity : AppCompatActivity() {
                     if (isFocusInContent()) {
                         val frag = currentContentFragment
                         if (frag is DpadNavigable && frag.canGoLeft()) {
-                            return super.onKeyDown(keyCode, event)
+                            return true
                         }
                         sidebarFragment.focusCurrentItem()
                         return true

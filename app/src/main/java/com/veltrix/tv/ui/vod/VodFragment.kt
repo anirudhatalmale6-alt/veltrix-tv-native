@@ -71,16 +71,27 @@ class VodFragment : Fragment(), MainActivity.DpadNavigable {
 
     override fun canGoLeft(): Boolean {
         val focused = activity?.currentFocus ?: return false
-        if (rvMovies.isAncestorOf(focused)) {
-            if (!isCategoryVisible) {
-                // Show categories first, move focus there
-                expandCategories()
-                rvCategories.post { rvCategories.getChildAt(0)?.requestFocus() }
-                return false // don't go to sidebar yet
+        if (!rvMovies.isAncestorOf(focused)) return false
+
+        val vh = rvMovies.findContainingViewHolder(focused)
+        if (vh != null) {
+            val pos = vh.adapterPosition
+            val lm = rvMovies.layoutManager as? GridLayoutManager
+            if (lm != null && pos >= 0) {
+                val column = pos % lm.spanCount
+                if (column > 0) {
+                    lm.findViewByPosition(pos - 1)?.requestFocus()
+                    return true
+                }
             }
-            return true
         }
-        return false
+
+        if (!isCategoryVisible) expandCategories()
+        rvCategories.post {
+            val sel = rvCategories.findViewHolderForAdapterPosition(categoryAdapter.selectedPosition)
+            (sel?.itemView ?: rvCategories.getChildAt(0))?.requestFocus()
+        }
+        return true
     }
 
     private fun RecyclerView.isAncestorOf(view: View): Boolean {
