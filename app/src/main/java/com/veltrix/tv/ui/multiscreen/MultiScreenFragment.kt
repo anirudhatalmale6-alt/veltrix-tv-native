@@ -14,7 +14,7 @@ import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
-import androidx.media3.datasource.okhttp.OkHttpDataSource
+import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
@@ -187,8 +187,15 @@ class MultiScreenFragment : Fragment() {
             .setBufferDurationsMs(30_000, 60_000, 3_000, 5_000)
             .build()
 
-        val streamClient = MainActivity.createStreamClient(30, 60)
-        val httpDataSourceFactory = androidx.media3.datasource.okhttp.OkHttpDataSource.Factory(streamClient)
+        val httpDataSourceFactory = DefaultHttpDataSource.Factory()
+            .setConnectTimeoutMs(30_000)
+            .setReadTimeoutMs(60_000)
+            .setAllowCrossProtocolRedirects(true)
+            .setUserAgent(MainActivity.USER_AGENT)
+            .setDefaultRequestProperties(mapOf(
+                "Connection" to "keep-alive",
+                "Accept" to "*/*"
+            ))
 
         val mediaSourceFactory = DefaultMediaSourceFactory(httpDataSourceFactory)
 

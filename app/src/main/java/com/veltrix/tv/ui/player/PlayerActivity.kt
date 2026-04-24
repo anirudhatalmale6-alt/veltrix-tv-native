@@ -24,7 +24,7 @@ import androidx.media3.common.MimeTypes
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.TrackSelectionOverride
-import androidx.media3.datasource.okhttp.OkHttpDataSource
+import androidx.media3.datasource.DefaultHttpDataSource
 import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
@@ -614,23 +614,32 @@ class PlayerActivity : AppCompatActivity() {
     }
 
     private var retryCount = 0
-    private val maxRetries = 3
-    private val retryDelayMs = 3000L
+    private val maxRetries = 5
+    private val retryDelayMs = 2000L
+    private var triedTsFormat = false
+    private var bufferTimeoutRunnable: Runnable? = null
 
     private fun initPlayer() {
         try {
-            // Configure larger buffers to prevent stream cutting off
             val loadControl = DefaultLoadControl.Builder()
                 .setBufferDurationsMs(
-                    60_000,   // min buffer: 60s (default 15s)
-                    120_000,  // max buffer: 120s (default 50s)
-                    5_000,    // buffer for playback: 5s (default 2.5s)
-                    10_000    // buffer for rebuffer: 10s (default 5s)
+                    30_000,   // min buffer: 30s
+                    60_000,   // max buffer: 60s
+                    2_500,    // buffer for playback: 2.5s
+                    5_000     // buffer for rebuffer: 5s
                 )
                 .build()
 
-            val streamClient = MainActivity.createStreamClient(30, 60)
-            val httpDataSourceFactory = OkHttpDataSource.Factory(streamClient)
+            val httpDataSourceFactory = DefaultHttpDataSource.Factory()
+                .setConnectTimeoutMs(15_000)
+                .setReadTimeoutMs(30_000)
+                .setAllowCrossProtocolRedirects(true)
+                .setKeepPostFor302Redirects(true)
+                .setUserAgent(MainActivity.USER_AGENT)
+                .setDefaultRequestProperties(mapOf(
+                    "Connection" to "keep-alive",
+                    "Accept" to "*/*"
+                ))
 
             val mediaSourceFactory = DefaultMediaSourceFactory(httpDataSourceFactory)
 
@@ -639,11 +648,8 @@ class PlayerActivity : AppCompatActivity() {
                 .setMediaSourceFactory(mediaSourceFactory)
                 .build().also {
                 playerView.player = it
-
-                // Keep device awake during playback to prevent stream cutoff
                 it.setWakeMode(C.WAKE_MODE_NETWORK)
 
-                // Force maximum video quality (4K support) and enable subtitles
                 it.trackSelectionParameters = it.trackSelectionParameters
                     .buildUpon()
                     .setMaxVideoSize(Int.MAX_VALUE, Int.MAX_VALUE)
@@ -657,11 +663,14 @@ class PlayerActivity : AppCompatActivity() {
                             Player.STATE_BUFFERING -> {
                                 progressBar.visible()
                                 tvError.gone()
+                                startBufferTimeout()
                             }
                             Player.STATE_READY -> {
+                                cancelBufferTimeout()
                                 progressBar.gone()
                                 tvError.gone()
-                                retryCount = 0  // Reset retry counter on success
+                                retryCount = 0
+                                triedTsFormat = false
                                 updatePlayPauseIcon()
                                 updateStreamInfoBadges()
                                 if (resumePosition > 0) {
@@ -670,8 +679,8 @@ class PlayerActivity : AppCompatActivity() {
                                 }
                             }
                             Player.STATE_ENDED -> {
+                                cancelBufferTimeout()
                                 if (streamType == "live") {
-                                    // Auto-reconnect for live streams
                                     android.util.Log.d("VeltrixTV", "Live stream ended, reconnecting...")
                                     handler.postDelayed({ playStream(streamUrl) }, 1000)
                                 } else {
@@ -684,6 +693,7 @@ class PlayerActivity : AppCompatActivity() {
                     }
 
                     override fun onPlayerError(error: PlaybackException) {
+                        cancelBufferTimeout()
                         val cause = error.cause
                         val errorDetail = when {
                             cause is java.io.IOException -> "Network: ${cause.message}"
@@ -691,24 +701,7 @@ class PlayerActivity : AppCompatActivity() {
                             else -> error.errorCodeName
                         }
                         android.util.Log.e("VeltrixTV", "Player error: $errorDetail", error)
-                        if (streamType == "live" && retryCount < maxRetries) {
-                            retryCount++
-                            tvError.text = "Retry $retryCount/$maxRetries: $errorDetail"
-                            tvError.visible()
-                            progressBar.visible()
-                            handler.postDelayed({
-                                player?.clearMediaItems()
-                                playStream(streamUrl)
-                            }, retryDelayMs)
-                        } else {
-                            progressBar.gone()
-                            tvError.visible()
-                            tvError.text = if (retryCount >= maxRetries) {
-                                "Error: $errorDetail\nPress OK to retry."
-                            } else {
-                                "Error: $errorDetail"
-                            }
-                        }
+                        handleStreamRetry(errorDetail)
                     }
                 })
             }
@@ -716,6 +709,67 @@ class PlayerActivity : AppCompatActivity() {
             android.util.Log.e("VeltrixTV", "initPlayer error", e)
             tvError.visible()
             tvError.text = "Player error: ${e.message}"
+        }
+    }
+
+    private fun startBufferTimeout() {
+        cancelBufferTimeout()
+        bufferTimeoutRunnable = Runnable {
+            if (player?.playbackState == Player.STATE_BUFFERING) {
+                android.util.Log.w("VeltrixTV", "Buffer timeout, retrying...")
+                handleStreamRetry("Buffer timeout")
+            }
+        }
+        handler.postDelayed(bufferTimeoutRunnable!!, 15_000)
+    }
+
+    private fun cancelBufferTimeout() {
+        bufferTimeoutRunnable?.let { handler.removeCallbacks(it) }
+        bufferTimeoutRunnable = null
+    }
+
+    private fun handleStreamRetry(errorDetail: String) {
+        if (retryCount >= maxRetries) {
+            progressBar.gone()
+            tvError.visible()
+            tvError.text = "Error: $errorDetail\nPress OK to retry."
+            return
+        }
+
+        retryCount++
+        val altUrl = getAlternateStreamUrl()
+        if (altUrl != null) {
+            tvError.text = "Trying alternate format ($retryCount/$maxRetries)..."
+            tvError.visible()
+            progressBar.visible()
+            streamUrl = altUrl
+            handler.postDelayed({
+                player?.clearMediaItems()
+                playStream(streamUrl)
+            }, retryDelayMs)
+        } else {
+            tvError.text = "Retry $retryCount/$maxRetries: $errorDetail"
+            tvError.visible()
+            progressBar.visible()
+            handler.postDelayed({
+                player?.clearMediaItems()
+                playStream(streamUrl)
+            }, retryDelayMs)
+        }
+    }
+
+    private fun getAlternateStreamUrl(): String? {
+        if (streamType != "live") return null
+        return when {
+            streamUrl.endsWith(".m3u8") && !triedTsFormat -> {
+                triedTsFormat = true
+                streamUrl.replace(".m3u8", ".ts")
+            }
+            streamUrl.endsWith(".ts") && !triedTsFormat -> {
+                triedTsFormat = true
+                streamUrl.replace(".ts", ".m3u8")
+            }
+            else -> null
         }
     }
 
