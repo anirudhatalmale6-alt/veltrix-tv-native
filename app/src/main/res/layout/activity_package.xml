@@ -36,7 +36,7 @@
         <!-- Monthly card -->
         <LinearLayout
             android:id="@+id/cardMonthly"
-            android:layout_width="500dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:padding="24dp"
@@ -107,7 +107,7 @@
         <!-- 3 Months card (best value) -->
         <LinearLayout
             android:id="@+id/card3Months"
-            android:layout_width="500dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:padding="24dp"
@@ -216,7 +216,7 @@
         <!-- 6 Months card -->
         <LinearLayout
             android:id="@+id/card6Months"
-            android:layout_width="500dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:padding="24dp"
@@ -311,7 +311,7 @@
         <!-- Free Trial card -->
         <LinearLayout
             android:id="@+id/cardTrial"
-            android:layout_width="500dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:padding="24dp"

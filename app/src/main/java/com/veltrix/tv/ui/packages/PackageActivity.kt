@@ -140,11 +140,13 @@ class PackageActivity : AppCompatActivity() {
     }
 
     private fun postActivateTrial(token: String): Boolean {
-        val body = "{}".toRequestBody("application/json".toMediaType())
+        val json = JSONObject().apply {
+            put("email", customerPrefs.customerEmail)
+        }
+        val body = json.toString().toRequestBody("application/json".toMediaType())
         val request = Request.Builder()
             .url("${DashboardTracker.BASE_URL}/api/customer/trial")
             .header("X-API-Key", DashboardTracker.API_KEY)
-            .header("Authorization", "Bearer $token")
             .post(body)
             .build()
 
@@ -173,11 +175,14 @@ class PackageActivity : AppCompatActivity() {
     }
 
     private fun fetchSubscriptionStatus(token: String): String {
+        val json = JSONObject().apply {
+            put("email", customerPrefs.customerEmail)
+        }
+        val reqBody = json.toString().toRequestBody("application/json".toMediaType())
         val request = Request.Builder()
             .url("${DashboardTracker.BASE_URL}/api/customer/subscription")
             .header("X-API-Key", DashboardTracker.API_KEY)
-            .header("Authorization", "Bearer $token")
-            .get()
+            .post(reqBody)
             .build()
 
         val response = httpClient.newCall(request).execute()
@@ -188,7 +193,7 @@ class PackageActivity : AppCompatActivity() {
             val obj = JSONObject(body)
             val data = obj.optJSONObject("data")
             val status = data?.optString("status", CustomerPrefsManager.STATUS_NONE) ?: CustomerPrefsManager.STATUS_NONE
-            val expiry = data?.optString("expiry", "") ?: ""
+            val expiry = data?.optString("subscription_expires_at", "") ?: ""
             if (expiry.isNotEmpty()) customerPrefs.subscriptionExpiry = expiry
             status
         } catch (e: Exception) {
