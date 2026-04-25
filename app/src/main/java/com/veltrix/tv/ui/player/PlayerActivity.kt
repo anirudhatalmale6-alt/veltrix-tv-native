@@ -674,7 +674,9 @@ class PlayerActivity : AppCompatActivity() {
                                 cancelBufferTimeout()
                                 if (streamType == "live") {
                                     android.util.Log.d("VeltrixTV", "Live stream ended, reconnecting...")
-                                    handler.postDelayed({ playStream(streamUrl) }, 1000)
+                                    handler.postDelayed({
+                                        if (!isFinishing && !isDestroyed) playStream(streamUrl)
+                                    }, 1000)
                                 } else {
                                     saveWatchProgress()
                                     finish()

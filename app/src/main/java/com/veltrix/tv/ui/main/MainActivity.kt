@@ -523,6 +523,7 @@ class MainActivity : AppCompatActivity() {
 
     fun closeMiniPlayer() {
         try {
+            handler.removeCallbacksAndMessages(null)
             miniPlayer?.release()
             miniPlayer = null
             miniPlayerContainer.visibility = android.view.View.GONE

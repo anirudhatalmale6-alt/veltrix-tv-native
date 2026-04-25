@@ -442,14 +442,18 @@ class LiveFragment : Fragment(), MainActivity.DpadNavigable {
                             previewLoading.gone()
                             updateStreamInfo(player)
                         } else if (state == Player.STATE_ENDED) {
-                            player.clearMediaItems()
-                            player.setMediaItem(MediaItem.fromUri(Uri.parse(streamUrl)))
-                            player.prepare()
-                            player.playWhenReady = true
+                            try {
+                                if (isAdded && previewPlayer == player) {
+                                    player.clearMediaItems()
+                                    player.setMediaItem(MediaItem.fromUri(Uri.parse(streamUrl)))
+                                    player.prepare()
+                                    player.playWhenReady = true
+                                }
+                            } catch (_: Exception) {}
                         }
                     }
                     override fun onPlayerError(error: PlaybackException) {
-                        previewLoading.gone()
+                        try { previewLoading.gone() } catch (_: Exception) {}
                         android.util.Log.e("VeltrixTV", "Preview error", error)
                     }
                 })

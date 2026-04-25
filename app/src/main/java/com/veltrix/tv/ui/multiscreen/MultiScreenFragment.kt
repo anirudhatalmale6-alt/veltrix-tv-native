@@ -203,22 +203,26 @@ class MultiScreenFragment : Fragment() {
             override fun onPlayerError(error: PlaybackException) {
                 android.util.Log.e("VeltrixTV", "MultiScreen Q${quadrant + 1} error", error)
                 view?.postDelayed({
-                    if (isAdded) {
-                        player.clearMediaItems()
-                        player.setMediaItem(MediaItem.fromUri(Uri.parse(streamUrl)))
-                        player.prepare()
-                        player.playWhenReady = true
+                    if (isAdded && players[quadrant] != null) {
+                        try {
+                            players[quadrant]?.clearMediaItems()
+                            players[quadrant]?.setMediaItem(MediaItem.fromUri(Uri.parse(streamUrl)))
+                            players[quadrant]?.prepare()
+                            players[quadrant]?.playWhenReady = true
+                        } catch (_: Exception) {}
                     }
                 }, 3000)
             }
             override fun onPlaybackStateChanged(state: Int) {
                 if (state == Player.STATE_ENDED && isAdded) {
                     view?.postDelayed({
-                        if (isAdded) {
-                            player.clearMediaItems()
-                            player.setMediaItem(MediaItem.fromUri(Uri.parse(streamUrl)))
-                            player.prepare()
-                            player.playWhenReady = true
+                        if (isAdded && players[quadrant] != null) {
+                            try {
+                                players[quadrant]?.clearMediaItems()
+                                players[quadrant]?.setMediaItem(MediaItem.fromUri(Uri.parse(streamUrl)))
+                                players[quadrant]?.prepare()
+                                players[quadrant]?.playWhenReady = true
+                            } catch (_: Exception) {}
                         }
                     }, 1000)
                 }
