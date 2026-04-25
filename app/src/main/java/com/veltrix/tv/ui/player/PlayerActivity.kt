@@ -784,6 +784,7 @@ class PlayerActivity : AppCompatActivity() {
         controlsOverlay.visible()
         isOverlayVisible = true
         isControlsVisible = true
+        btnPlayPause.requestFocus()
         resetOverlayTimer()
     }
 
@@ -827,7 +828,6 @@ class PlayerActivity : AppCompatActivity() {
         return when (keyCode) {
             KeyEvent.KEYCODE_DPAD_CENTER, KeyEvent.KEYCODE_ENTER,
             KeyEvent.KEYCODE_NUMPAD_ENTER, KeyEvent.KEYCODE_SPACE -> {
-                // If stream died and user presses OK, retry
                 if (retryCount >= maxRetries && streamType == "live") {
                     retryCount = 0
                     tvError.gone()
@@ -837,14 +837,8 @@ class PlayerActivity : AppCompatActivity() {
                     showOverlay()
                     true
                 } else {
-                    if (streamType != "live") {
-                        player?.let {
-                            it.playWhenReady = !it.playWhenReady
-                            updatePlayPauseIcon()
-                        }
-                    }
                     resetOverlayTimer()
-                    true
+                    super.onKeyDown(keyCode, event)
                 }
             }
             KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE, KeyEvent.KEYCODE_MEDIA_PLAY,

@@ -12,8 +12,8 @@ android {
         applicationId = "com.veltrix.tv"
         minSdk = 21
         targetSdk = 34
-        versionCode = 44
-        versionName = "1.0.44"
+        versionCode = 45
+        versionName = "1.0.45"
     }
 
     buildTypes {
