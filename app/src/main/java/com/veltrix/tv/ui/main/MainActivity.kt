@@ -444,6 +444,7 @@ class MainActivity : AppCompatActivity() {
     private fun exitApp() {
         try {
             handler.removeCallbacksAndMessages(null)
+            com.veltrix.tv.util.DashboardTracker.stop()
             closeMiniPlayer()
             SearchDataCache.liveStreams = emptyList()
             SearchDataCache.vodStreams = emptyList()

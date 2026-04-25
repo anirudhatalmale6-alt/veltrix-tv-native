@@ -39,6 +39,7 @@ class LoginActivity : AppCompatActivity() {
         prefs = PrefsManager.getInstance(this)
 
         if (prefs.isLoggedIn) {
+            com.veltrix.tv.util.DashboardTracker.init(this, prefs.username, "1.0.45")
             navigateToMain()
             return
         }
@@ -121,6 +122,7 @@ class LoginActivity : AppCompatActivity() {
                     prefs.port = serverInfo?.port ?: ""
                     prefs.isLoggedIn = true
 
+                    com.veltrix.tv.util.DashboardTracker.init(this@LoginActivity, username, "1.0.45")
                     navigateToMain()
                 } else if (userInfo?.status == "Expired") {
                     showError(getString(R.string.account_expired))

@@ -778,6 +778,7 @@ class PlayerActivity : AppCompatActivity() {
             it.prepare()
             it.playWhenReady = true
             handler.post(updateProgressRunnable)
+            com.veltrix.tv.util.DashboardTracker.onWatchStart(channelName, categoryName)
         }
     }
 
@@ -962,6 +963,7 @@ class PlayerActivity : AppCompatActivity() {
     override fun onDestroy() {
         super.onDestroy()
         handler.removeCallbacksAndMessages(null)
+        com.veltrix.tv.util.DashboardTracker.onWatchStop()
         player?.release()
         player = null
     }
