@@ -56,4 +56,53 @@
     <string name="no_results">No results found</string>
     <string name="subtitles">Subtitles</string>
     <string name="no_subtitles">No subtitles available</string>
+
+    <!-- Welcome screen -->
+    <string name="welcome_title">Veltrix TV</string>
+    <string name="welcome_subtitle">Premium Streaming at Your Fingertips</string>
+    <string name="btn_create_account">Create Account</string>
+    <string name="btn_sign_in">Sign In</string>
+
+    <!-- Register screen -->
+    <string name="register_title">Create Account</string>
+    <string name="hint_email">Email address</string>
+    <string name="hint_confirm_password">Confirm password</string>
+    <string name="already_have_account">Already have an account? Sign In</string>
+    <string name="error_email_empty">Please enter your email address</string>
+    <string name="error_email_invalid">Please enter a valid email address</string>
+    <string name="error_password_empty">Please enter a password</string>
+    <string name="error_password_short">Password must be at least 6 characters</string>
+    <string name="error_passwords_mismatch">Passwords do not match</string>
+    <string name="error_register_failed">Registration failed. Please try again.</string>
+
+    <!-- Customer login screen -->
+    <string name="customer_login_title">Sign In</string>
+    <string name="no_account_register">Don\'t have an account? Register</string>
+    <string name="error_login_failed">Invalid email or password.</string>
+
+    <!-- Package screen -->
+    <string name="package_title">Choose Your Plan</string>
+    <string name="package_subtitle">Unlock unlimited streaming</string>
+    <string name="plan_monthly">Monthly</string>
+    <string name="plan_3months">3 Months</string>
+    <string name="plan_6months">6 Months</string>
+    <string name="plan_trial">Free Trial</string>
+    <string name="price_monthly">$10/month</string>
+    <string name="price_3months">$25</string>
+    <string name="price_6months">$45</string>
+    <string name="price_trial">24 Hours Free</string>
+    <string name="save_17">Save 17%</string>
+    <string name="save_25">Save 25%</string>
+    <string name="best_value">BEST VALUE</string>
+    <string name="btn_select">Select</string>
+    <string name="btn_start_trial">Start Free Trial</string>
+    <string name="feature_channels">24,000+ 4K Channels</string>
+    <string name="feature_vod">160,000+ VOD &amp; Series</string>
+    <string name="feature_devices">All Devices Supported</string>
+    <string name="trial_activating">Activating your trial&#8230;</string>
+    <string name="trial_activated">Trial activated! Enjoy 24 hours of Veltrix TV.</string>
+    <string name="opening_payment">Opening payment page&#8230;</string>
+
+    <!-- IPTV fallback link -->
+    <string name="iptv_login_link">Have an IPTV subscription? Login with server details</string>
 </resources>

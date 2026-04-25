@@ -41,6 +41,39 @@
         <item name="android:focusableInTouchMode">true</item>
     </style>
 
+    <style name="CyanEditText">
+        <item name="android:background">@drawable/edit_text_bg_cyan</item>
+        <item name="android:textColor">@color/text_primary</item>
+        <item name="android:textColorHint">@color/input_hint</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:padding">14dp</item>
+        <item name="android:singleLine">true</item>
+        <item name="android:focusable">true</item>
+        <item name="android:focusableInTouchMode">true</item>
+    </style>
+
+    <style name="CyanButton">
+        <item name="android:background">@drawable/button_bg_cyan</item>
+        <item name="android:textColor">@color/black</item>
+        <item name="android:textSize">18sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:padding">14dp</item>
+        <item name="android:gravity">center</item>
+        <item name="android:focusable">true</item>
+        <item name="android:focusableInTouchMode">true</item>
+    </style>
+
+    <style name="OutlineButton">
+        <item name="android:background">@drawable/button_bg_outline</item>
+        <item name="android:textColor">@color/cyan</item>
+        <item name="android:textSize">18sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:padding">14dp</item>
+        <item name="android:gravity">center</item>
+        <item name="android:focusable">true</item>
+        <item name="android:focusableInTouchMode">true</item>
+    </style>
+
     <style name="SidebarText">
         <item name="android:textColor">@color/text_secondary</item>
         <item name="android:textSize">16sp</item>

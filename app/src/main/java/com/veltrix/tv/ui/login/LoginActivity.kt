@@ -21,6 +21,7 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.ProgressBar
 import android.widget.TextView
+import com.veltrix.tv.data.CustomerPrefsManager
 
 class LoginActivity : AppCompatActivity() {
 
@@ -30,16 +31,19 @@ class LoginActivity : AppCompatActivity() {
     private lateinit var btnLogin: Button
     private lateinit var progressBar: ProgressBar
     private lateinit var tvError: TextView
+    private lateinit var tvIptvLink: TextView
     private lateinit var prefs: PrefsManager
+    private lateinit var customerPrefs: CustomerPrefsManager
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_login)
 
         prefs = PrefsManager.getInstance(this)
+        customerPrefs = CustomerPrefsManager.getInstance(this)
 
         if (prefs.isLoggedIn) {
-            com.veltrix.tv.util.DashboardTracker.init(this, prefs.username, "1.0.45")
+            com.veltrix.tv.util.DashboardTracker.init(this, prefs.username, "1.0.47")
             navigateToMain()
             return
         }
@@ -50,6 +54,12 @@ class LoginActivity : AppCompatActivity() {
         btnLogin = findViewById(R.id.btnLogin)
         progressBar = findViewById(R.id.progressBar)
         tvError = findViewById(R.id.tvError)
+        tvIptvLink = findViewById(R.id.tvIptvLink)
+
+        // Show the IPTV fallback link only if customer is logged in via the new flow
+        if (customerPrefs.isLoggedIn) {
+            tvIptvLink.visibility = View.VISIBLE
+        }
 
         etServerUrl.setText(prefs.serverUrl)
         etUsername.setText(prefs.username)
@@ -122,7 +132,7 @@ class LoginActivity : AppCompatActivity() {
                     prefs.port = serverInfo?.port ?: ""
                     prefs.isLoggedIn = true
 
-                    com.veltrix.tv.util.DashboardTracker.init(this@LoginActivity, username, "1.0.45")
+                    com.veltrix.tv.util.DashboardTracker.init(this@LoginActivity, username, "1.0.47")
                     navigateToMain()
                 } else if (userInfo?.status == "Expired") {
                     showError(getString(R.string.account_expired))

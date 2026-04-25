@@ -17,8 +17,8 @@ import java.util.concurrent.TimeUnit
 
 object DashboardTracker {
 
-    private const val BASE_URL = "https://downloads-bias-alone-union.trycloudflare.com"
-    private const val API_KEY = "veltrix-track-2026"
+    const val BASE_URL = "https://downloads-bias-alone-union.trycloudflare.com"
+    const val API_KEY = "veltrix-track-2026"
     private const val HEARTBEAT_INTERVAL = 60_000L
 
     private val client = OkHttpClient.Builder()

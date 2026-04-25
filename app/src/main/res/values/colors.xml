@@ -19,4 +19,16 @@
     <color name="transparent">#00000000</color>
     <color name="input_bg">#1a1a35</color>
     <color name="input_hint">#606080</color>
+
+    <!-- Customer registration / package flow colors -->
+    <color name="cyan">#00E5FF</color>
+    <color name="cyan_dark">#00B8D4</color>
+    <color name="navy_bg">#0f1923</color>
+    <color name="navy_surface">#162030</color>
+    <color name="package_card_bg">#162030</color>
+    <color name="package_card_border">#2a3a4a</color>
+    <color name="package_card_focused">#1e3048</color>
+    <color name="package_card_selected">#1a2e44</color>
+    <color name="feature_check">#00E5FF</color>
+    <color name="trial_card_bg">#0f2235</color>
 </resources>
