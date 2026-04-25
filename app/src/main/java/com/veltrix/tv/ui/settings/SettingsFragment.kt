@@ -11,16 +11,25 @@ import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import com.veltrix.tv.R
+import com.veltrix.tv.data.CustomerPrefsManager
 import com.veltrix.tv.data.PrefsManager
 import com.veltrix.tv.data.local.AppDatabase
 import com.veltrix.tv.ui.login.LoginActivity
 import com.veltrix.tv.ui.main.MainActivity
+import com.veltrix.tv.ui.welcome.WelcomeActivity
+import com.veltrix.tv.util.DashboardTracker
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.RequestBody.Companion.toRequestBody
+import org.json.JSONObject
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.concurrent.TimeUnit
 
 class SettingsFragment : Fragment() {
 
@@ -30,6 +39,12 @@ class SettingsFragment : Fragment() {
     private lateinit var tvExpiry: TextView
     private lateinit var tvMaxConn: TextView
     private lateinit var btnLogout: Button
+    private lateinit var btnDeleteAccount: Button
+
+    private val httpClient = OkHttpClient.Builder()
+        .connectTimeout(15, TimeUnit.SECONDS)
+        .readTimeout(15, TimeUnit.SECONDS)
+        .build()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -60,6 +75,14 @@ class SettingsFragment : Fragment() {
 
         btnLogout.setOnClickListener {
             showLogoutDialog()
+        }
+
+        btnDeleteAccount = view.findViewById(R.id.btnDeleteAccount)
+        btnDeleteAccount.setOnFocusChangeListener { v, hasFocus ->
+            v.isSelected = hasFocus
+        }
+        btnDeleteAccount.setOnClickListener {
+            showDeleteAccountDialog()
         }
     }
 
@@ -128,5 +151,67 @@ class SettingsFragment : Fragment() {
         }
         startActivity(intent)
         requireActivity().finish()
+    }
+
+    private fun showDeleteAccountDialog() {
+        AlertDialog.Builder(requireContext())
+            .setTitle("Delete Account")
+            .setMessage("This will permanently delete your account, cancel your subscription, and log you out. This cannot be undone.\n\nAre you sure?")
+            .setPositiveButton("Delete") { _, _ ->
+                performDeleteAccount()
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun performDeleteAccount() {
+        val customerPrefs = CustomerPrefsManager.getInstance(requireContext())
+        val email = customerPrefs.customerEmail
+
+        if (email.isEmpty()) {
+            performLogout()
+            return
+        }
+
+        btnDeleteAccount.isEnabled = false
+        btnDeleteAccount.text = "Deleting..."
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            try {
+                val deleted = withContext(Dispatchers.IO) {
+                    val json = JSONObject().apply { put("email", email) }
+                    val body = json.toString().toRequestBody("application/json".toMediaType())
+                    val request = Request.Builder()
+                        .url("${DashboardTracker.BASE_URL}/api/customer/delete")
+                        .header("X-API-Key", DashboardTracker.API_KEY)
+                        .post(body)
+                        .build()
+                    httpClient.newCall(request).execute().isSuccessful
+                }
+
+                customerPrefs.clear()
+                val prefs = PrefsManager.getInstance(requireContext())
+                prefs.clear()
+                DashboardTracker.stop()
+
+                withContext(Dispatchers.IO) {
+                    AppDatabase.getInstance(requireContext()).favoriteDao().deleteAll()
+                }
+
+                val intent = Intent(requireContext(), WelcomeActivity::class.java).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                }
+                startActivity(intent)
+                requireActivity().finish()
+            } catch (e: Exception) {
+                btnDeleteAccount.isEnabled = true
+                btnDeleteAccount.text = "Delete Account"
+                AlertDialog.Builder(requireContext())
+                    .setTitle("Error")
+                    .setMessage("Could not delete account. Please try again.\n${e.message}")
+                    .setPositiveButton("OK", null)
+                    .show()
+            }
+        }
     }
 }

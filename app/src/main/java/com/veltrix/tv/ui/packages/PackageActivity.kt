@@ -13,8 +13,10 @@ import androidx.lifecycle.lifecycleScope
 import com.veltrix.tv.R
 import com.veltrix.tv.data.CustomerPrefsManager
 import com.veltrix.tv.ui.login.LoginActivity
+import com.veltrix.tv.ui.welcome.WelcomeActivity
 import com.veltrix.tv.util.DashboardTracker
 import com.veltrix.tv.util.toast
+import androidx.appcompat.app.AlertDialog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -69,6 +71,10 @@ class PackageActivity : AppCompatActivity() {
         btnSelect3Months.setOnFocusChangeListener  { v, hasFocus -> v.isSelected = hasFocus }
         btnSelect6Months.setOnFocusChangeListener  { v, hasFocus -> v.isSelected = hasFocus }
         btnStartTrial.setOnFocusChangeListener     { v, hasFocus -> v.isSelected = hasFocus }
+
+        val tvDeleteAccount = findViewById<TextView>(R.id.tvDeleteAccount)
+        tvDeleteAccount.setOnClickListener { showDeleteAccountDialog() }
+        tvDeleteAccount.setOnFocusChangeListener { v, hasFocus -> v.isSelected = hasFocus }
 
         btnSelectMonthly.requestFocus()
     }
@@ -229,5 +235,51 @@ class PackageActivity : AppCompatActivity() {
         startActivity(Intent(this, LoginActivity::class.java))
         overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
         finish()
+    }
+
+    private fun showDeleteAccountDialog() {
+        AlertDialog.Builder(this)
+            .setTitle("Delete Account")
+            .setMessage("This will permanently delete your account. This cannot be undone.\n\nAre you sure?")
+            .setPositiveButton("Delete") { _, _ ->
+                performDeleteAccount()
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
+    private fun performDeleteAccount() {
+        setLoading(true)
+        showStatus("Deleting account...")
+
+        lifecycleScope.launch {
+            try {
+                withContext(Dispatchers.IO) {
+                    val json = JSONObject().apply {
+                        put("email", customerPrefs.customerEmail)
+                    }
+                    val body = json.toString().toRequestBody("application/json".toMediaType())
+                    val request = Request.Builder()
+                        .url("${DashboardTracker.BASE_URL}/api/customer/delete")
+                        .header("X-API-Key", DashboardTracker.API_KEY)
+                        .post(body)
+                        .build()
+                    httpClient.newCall(request).execute()
+                }
+
+                customerPrefs.clear()
+                toast("Account deleted")
+
+                val intent = Intent(this@PackageActivity, WelcomeActivity::class.java).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                }
+                startActivity(intent)
+                finish()
+            } catch (e: Exception) {
+                showStatus("Could not delete account. Please try again.")
+            } finally {
+                setLoading(false)
+            }
+        }
     }
 }
