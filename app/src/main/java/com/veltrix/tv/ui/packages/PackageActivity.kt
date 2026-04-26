@@ -118,8 +118,8 @@ class PackageActivity : AppCompatActivity() {
     }
 
     private fun activateTrial() {
-        val token = customerPrefs.customerToken
-        if (token.isEmpty()) {
+        val email = customerPrefs.customerEmail
+        if (email.isEmpty()) {
             toast(getString(R.string.error_login_failed))
             return
         }
@@ -130,15 +130,15 @@ class PackageActivity : AppCompatActivity() {
         lifecycleScope.launch {
             try {
                 val result = withContext(Dispatchers.IO) {
-                    postActivateTrial(token)
+                    postActivateTrial(email)
                 }
 
-                if (result) {
+                if (result.first) {
                     customerPrefs.subscriptionStatus = CustomerPrefsManager.STATUS_TRIAL
                     toast(getString(R.string.trial_activated))
                     navigateToIptvLogin()
                 } else {
-                    showStatus(getString(R.string.error_register_failed))
+                    showStatus(result.second)
                 }
             } catch (e: Exception) {
                 showStatus(getString(R.string.connection_error) + "\n${e.message}")
@@ -148,9 +148,9 @@ class PackageActivity : AppCompatActivity() {
         }
     }
 
-    private fun postActivateTrial(token: String): Boolean {
+    private fun postActivateTrial(email: String): Pair<Boolean, String> {
         val json = JSONObject().apply {
-            put("email", customerPrefs.customerEmail)
+            put("email", email)
         }
         val body = json.toString().toRequestBody("application/json".toMediaType())
         val request = Request.Builder()
@@ -160,7 +160,15 @@ class PackageActivity : AppCompatActivity() {
             .build()
 
         val response = httpClient.newCall(request).execute()
-        return response.isSuccessful
+        val respBody = response.body?.string() ?: ""
+        if (response.isSuccessful) return Pair(true, "")
+
+        return try {
+            val obj = JSONObject(respBody)
+            Pair(false, obj.optString("error", "Trial activation failed"))
+        } catch (e: Exception) {
+            Pair(false, "Trial activation failed")
+        }
     }
 
     private fun checkSubscriptionStatus() {
