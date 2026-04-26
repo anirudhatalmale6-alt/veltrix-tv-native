@@ -22,6 +22,7 @@ import android.widget.EditText
 import android.widget.ProgressBar
 import android.widget.TextView
 import com.veltrix.tv.data.CustomerPrefsManager
+import com.veltrix.tv.ui.packages.PackageActivity
 import com.veltrix.tv.ui.welcome.WelcomeActivity
 
 class LoginActivity : AppCompatActivity() {
@@ -93,7 +94,9 @@ class LoginActivity : AppCompatActivity() {
 
         val tvBackToWelcome = findViewById<TextView>(R.id.tvBackToWelcome)
         tvBackToWelcome.setOnClickListener {
-            startActivity(Intent(this, WelcomeActivity::class.java).apply {
+            val dest = if (customerPrefs.isLoggedIn) PackageActivity::class.java
+                       else WelcomeActivity::class.java
+            startActivity(Intent(this, dest).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
             })
             finish()

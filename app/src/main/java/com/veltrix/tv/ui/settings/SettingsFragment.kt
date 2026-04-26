@@ -16,6 +16,7 @@ import com.veltrix.tv.data.PrefsManager
 import com.veltrix.tv.data.local.AppDatabase
 import com.veltrix.tv.ui.login.LoginActivity
 import com.veltrix.tv.ui.main.MainActivity
+import com.veltrix.tv.ui.packages.PackageActivity
 import com.veltrix.tv.ui.welcome.WelcomeActivity
 import com.veltrix.tv.util.DashboardTracker
 import kotlinx.coroutines.Dispatchers
@@ -147,7 +148,11 @@ class SettingsFragment : Fragment() {
             }
         }
 
-        val intent = Intent(requireContext(), WelcomeActivity::class.java).apply {
+        val customerPrefs = CustomerPrefsManager.getInstance(requireContext())
+        val dest = if (customerPrefs.isLoggedIn) PackageActivity::class.java
+                   else WelcomeActivity::class.java
+
+        val intent = Intent(requireContext(), dest).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         }
         startActivity(intent)
