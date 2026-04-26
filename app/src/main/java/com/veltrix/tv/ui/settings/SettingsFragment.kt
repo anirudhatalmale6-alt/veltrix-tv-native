@@ -139,6 +139,7 @@ class SettingsFragment : Fragment() {
     private fun performLogout() {
         val prefs = PrefsManager.getInstance(requireContext())
         prefs.clear()
+        DashboardTracker.stop()
 
         viewLifecycleOwner.lifecycleScope.launch {
             withContext(Dispatchers.IO) {
@@ -146,7 +147,7 @@ class SettingsFragment : Fragment() {
             }
         }
 
-        val intent = Intent(requireContext(), LoginActivity::class.java).apply {
+        val intent = Intent(requireContext(), WelcomeActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         }
         startActivity(intent)

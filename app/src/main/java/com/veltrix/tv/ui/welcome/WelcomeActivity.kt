@@ -26,14 +26,8 @@ class WelcomeActivity : AppCompatActivity() {
 
         // If IPTV already logged in (returning user with active session), go straight to main
         if (iptvPrefs.isLoggedIn) {
-            com.veltrix.tv.util.DashboardTracker.init(this, iptvPrefs.username, "1.0.47")
+            com.veltrix.tv.util.DashboardTracker.init(this, iptvPrefs.username, "1.0.49")
             navigateTo(MainActivity::class.java)
-            return
-        }
-
-        // If customer has active subscription, skip to IPTV login to auto-connect
-        if (customerPrefs.isLoggedIn && customerPrefs.hasActiveSubscription) {
-            navigateTo(LoginActivity::class.java)
             return
         }
 

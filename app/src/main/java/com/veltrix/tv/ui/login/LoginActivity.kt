@@ -22,6 +22,7 @@ import android.widget.EditText
 import android.widget.ProgressBar
 import android.widget.TextView
 import com.veltrix.tv.data.CustomerPrefsManager
+import com.veltrix.tv.ui.welcome.WelcomeActivity
 
 class LoginActivity : AppCompatActivity() {
 
@@ -88,6 +89,20 @@ class LoginActivity : AppCompatActivity() {
         btnLogin.setOnClickListener { performLogin() }
         btnLogin.setOnFocusChangeListener { v, hasFocus ->
             v.isSelected = hasFocus
+        }
+
+        val tvBackToWelcome = findViewById<TextView>(R.id.tvBackToWelcome)
+        tvBackToWelcome.setOnClickListener {
+            startActivity(Intent(this, WelcomeActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+            })
+            finish()
+        }
+        tvBackToWelcome.setOnFocusChangeListener { v, hasFocus ->
+            (v as TextView).setTextColor(
+                if (hasFocus) resources.getColor(R.color.red, null)
+                else resources.getColor(R.color.text_dim, null)
+            )
         }
 
         etServerUrl.requestFocus()

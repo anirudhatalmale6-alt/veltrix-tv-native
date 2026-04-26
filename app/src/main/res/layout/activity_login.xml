@@ -107,6 +107,20 @@
             android:clickable="true"
             android:visibility="gone" />
 
+        <TextView
+            android:id="@+id/tvBackToWelcome"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="16dp"
+            android:text="Back to Account"
+            android:textColor="@color/text_dim"
+            android:textSize="13sp"
+            android:focusable="true"
+            android:focusableInTouchMode="true"
+            android:clickable="true"
+            android:padding="8dp" />
+
     </LinearLayout>
 
 </FrameLayout>
