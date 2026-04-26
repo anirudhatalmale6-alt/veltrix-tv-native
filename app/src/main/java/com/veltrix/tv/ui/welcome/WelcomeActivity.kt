@@ -3,6 +3,7 @@ package com.veltrix.tv.ui.welcome
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.veltrix.tv.R
 import com.veltrix.tv.data.CustomerPrefsManager
@@ -40,6 +41,7 @@ class WelcomeActivity : AppCompatActivity() {
 
         val btnCreateAccount = findViewById<Button>(R.id.btnCreateAccount)
         val btnSignIn = findViewById<Button>(R.id.btnSignIn)
+        val tvIptvDirect = findViewById<TextView>(R.id.tvIptvDirect)
 
         btnCreateAccount.setOnClickListener {
             navigateTo(RegisterActivity::class.java)
@@ -49,8 +51,18 @@ class WelcomeActivity : AppCompatActivity() {
             navigateTo(CustomerLoginActivity::class.java)
         }
 
+        tvIptvDirect.setOnClickListener {
+            navigateTo(LoginActivity::class.java)
+        }
+
         btnCreateAccount.setOnFocusChangeListener { v, hasFocus -> v.isSelected = hasFocus }
         btnSignIn.setOnFocusChangeListener { v, hasFocus -> v.isSelected = hasFocus }
+        tvIptvDirect.setOnFocusChangeListener { v, hasFocus ->
+            (v as TextView).setTextColor(
+                if (hasFocus) resources.getColor(R.color.cyan, null)
+                else resources.getColor(R.color.text_dim, null)
+            )
+        }
 
         btnCreateAccount.requestFocus()
     }
