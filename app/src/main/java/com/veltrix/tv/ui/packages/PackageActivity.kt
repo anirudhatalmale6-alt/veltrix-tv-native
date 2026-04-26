@@ -36,6 +36,7 @@ class PackageActivity : AppCompatActivity() {
     private lateinit var progressBar: ProgressBar
     private lateinit var tvStatus: TextView
     private lateinit var customerPrefs: CustomerPrefsManager
+    private var openedStripePayment = false
 
     private val httpClient = OkHttpClient.Builder()
         .connectTimeout(15, TimeUnit.SECONDS)
@@ -81,8 +82,9 @@ class PackageActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        // When returning from browser after payment, check subscription status
-        if (customerPrefs.customerToken.isNotEmpty()) {
+        // Only check subscription when returning from Stripe browser payment
+        if (openedStripePayment && customerPrefs.customerToken.isNotEmpty()) {
+            openedStripePayment = false
             checkSubscriptionStatus()
         }
     }
@@ -106,6 +108,7 @@ class PackageActivity : AppCompatActivity() {
         }
 
         showStatus(getString(R.string.opening_payment))
+        openedStripePayment = true
         try {
             val intent = Intent(Intent.ACTION_VIEW, Uri.parse(urlBuilder.toString()))
             startActivity(intent)
