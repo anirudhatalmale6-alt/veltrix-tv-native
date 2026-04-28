@@ -40,13 +40,8 @@ class PackageActivity : AppCompatActivity() {
 
     private val httpClient = OkHttpClient.Builder()
         .connectTimeout(15, TimeUnit.SECONDS)
-        .readTimeout(15, TimeUnit.SECONDS)
+        .readTimeout(90, TimeUnit.SECONDS)
         .build()
-
-    // Stripe payment links
-    private val STRIPE_MONTHLY   = "https://buy.stripe.com/aFa6oHdq893SdAVfQD8Vi02"
-    private val STRIPE_3_MONTHS  = "https://buy.stripe.com/4gMbJ1gCk7ZOdAVfQD8Vi01"
-    private val STRIPE_6_MONTHS  = "https://buy.stripe.com/cNibJ11Hqbc08gB6g38Vi04"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -63,9 +58,9 @@ class PackageActivity : AppCompatActivity() {
 
         setupCardFocus()
 
-        btnSelectMonthly.setOnClickListener  { openStripePayment(STRIPE_MONTHLY) }
-        btnSelect3Months.setOnClickListener  { openStripePayment(STRIPE_3_MONTHS) }
-        btnSelect6Months.setOnClickListener  { openStripePayment(STRIPE_6_MONTHS) }
+        btnSelectMonthly.setOnClickListener  { startPayPalCheckout("monthly") }
+        btnSelect3Months.setOnClickListener  { startPayPalCheckout("3month") }
+        btnSelect6Months.setOnClickListener  { startPayPalCheckout("6month") }
         btnStartTrial.setOnClickListener     { activateTrial() }
 
         btnSelectMonthly.setOnFocusChangeListener  { v, hasFocus -> v.isSelected = hasFocus }
@@ -82,38 +77,58 @@ class PackageActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        // Only check subscription when returning from Stripe browser payment
         if (openedStripePayment && customerPrefs.customerToken.isNotEmpty()) {
             openedStripePayment = false
             checkSubscriptionStatus()
         }
     }
 
-    private fun openStripePayment(baseUrl: String) {
+    private fun startPayPalCheckout(plan: String) {
         val email = customerPrefs.customerEmail
-        val customerId = customerPrefs.customerId
-        val urlBuilder = StringBuilder(baseUrl)
-
-        if (email.isNotEmpty() || customerId.isNotEmpty()) {
-            urlBuilder.append("?")
-            if (email.isNotEmpty()) {
-                urlBuilder.append("prefilled_email=")
-                urlBuilder.append(Uri.encode(email))
-            }
-            if (customerId.isNotEmpty()) {
-                if (email.isNotEmpty()) urlBuilder.append("&")
-                urlBuilder.append("client_reference_id=")
-                urlBuilder.append(Uri.encode(customerId))
-            }
+        if (email.isEmpty()) {
+            toast(getString(R.string.error_login_failed))
+            return
         }
 
+        setLoading(true)
         showStatus(getString(R.string.opening_payment))
-        openedStripePayment = true
-        try {
-            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(urlBuilder.toString()))
-            startActivity(intent)
-        } catch (e: Exception) {
-            toast(getString(R.string.connection_error))
+
+        lifecycleScope.launch {
+            try {
+                val checkoutUrl = withContext(Dispatchers.IO) {
+                    val json = JSONObject().apply {
+                        put("plan", plan)
+                        put("email", email)
+                    }
+                    val body = json.toString().toRequestBody("application/json".toMediaType())
+                    val request = Request.Builder()
+                        .url("${DashboardTracker.BASE_URL}/api/checkout")
+                        .header("X-API-Key", DashboardTracker.API_KEY)
+                        .post(body)
+                        .build()
+
+                    val response = httpClient.newCall(request).execute()
+                    val respBody = response.body?.string() ?: ""
+                    val obj = JSONObject(respBody)
+                    if (obj.optBoolean("success")) {
+                        obj.optJSONObject("data")?.optString("checkout_url", "") ?: ""
+                    } else {
+                        throw Exception(obj.optString("error", "Checkout failed"))
+                    }
+                }
+
+                if (checkoutUrl.isNotEmpty()) {
+                    openedStripePayment = true
+                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(checkoutUrl))
+                    startActivity(intent)
+                } else {
+                    showStatus("Could not create checkout")
+                }
+            } catch (e: Exception) {
+                showStatus(e.message ?: getString(R.string.connection_error))
+            } finally {
+                setLoading(false)
+            }
         }
     }
 
@@ -125,7 +140,7 @@ class PackageActivity : AppCompatActivity() {
         }
 
         setLoading(true)
-        showStatus(getString(R.string.trial_activating))
+        showStatus("Creating your IPTV account (30s)...")
 
         lifecycleScope.launch {
             try {
@@ -133,12 +148,16 @@ class PackageActivity : AppCompatActivity() {
                     postActivateTrial(email)
                 }
 
-                if (result.first) {
+                if (result.success) {
                     customerPrefs.subscriptionStatus = CustomerPrefsManager.STATUS_TRIAL
-                    toast(getString(R.string.trial_activated))
-                    navigateToIptvLogin()
+                    if (result.username.isNotEmpty() && result.password.isNotEmpty()) {
+                        showCredentialsDialog(result.server, result.username, result.password)
+                    } else {
+                        toast(getString(R.string.trial_activated))
+                        navigateToIptvLogin()
+                    }
                 } else {
-                    showStatus(result.second)
+                    showStatus(result.error)
                 }
             } catch (e: Exception) {
                 showStatus(getString(R.string.connection_error) + "\n${e.message}")
@@ -148,7 +167,15 @@ class PackageActivity : AppCompatActivity() {
         }
     }
 
-    private fun postActivateTrial(email: String): Pair<Boolean, String> {
+    private data class TrialResult(
+        val success: Boolean,
+        val error: String = "",
+        val server: String = "",
+        val username: String = "",
+        val password: String = ""
+    )
+
+    private fun postActivateTrial(email: String): TrialResult {
         val json = JSONObject().apply {
             put("email", email)
         }
@@ -161,14 +188,41 @@ class PackageActivity : AppCompatActivity() {
 
         val response = httpClient.newCall(request).execute()
         val respBody = response.body?.string() ?: ""
-        if (response.isSuccessful) return Pair(true, "")
+        val obj = JSONObject(respBody)
 
-        return try {
-            val obj = JSONObject(respBody)
-            Pair(false, obj.optString("error", "Trial activation failed"))
-        } catch (e: Exception) {
-            Pair(false, "Trial activation failed")
+        if (response.isSuccessful && obj.optBoolean("success")) {
+            val data = obj.optJSONObject("data")
+            return TrialResult(
+                success = true,
+                server = data?.optString("iptv_server", "http://8kstrong-vip.xyz") ?: "http://8kstrong-vip.xyz",
+                username = data?.optString("iptv_username", "") ?: "",
+                password = data?.optString("iptv_password", "") ?: ""
+            )
         }
+
+        return TrialResult(success = false, error = obj.optString("error", "Trial activation failed"))
+    }
+
+    private fun showCredentialsDialog(server: String, username: String, password: String) {
+        val iptvPrefs = com.veltrix.tv.data.PrefsManager.getInstance(this)
+        iptvPrefs.serverUrl = server
+        iptvPrefs.username = username
+        iptvPrefs.password = password
+        iptvPrefs.isLoggedIn = true
+
+        AlertDialog.Builder(this)
+            .setTitle("Trial Activated!")
+            .setMessage("Your IPTV credentials:\n\nServer: $server\nUsername: $username\nPassword: $password\n\nCredentials have been saved. You can start watching now!")
+            .setPositiveButton("Start Watching") { _, _ ->
+                DashboardTracker.init(this, username, "1.0.62")
+                val intent = Intent(this, com.veltrix.tv.ui.main.MainActivity::class.java).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                }
+                startActivity(intent)
+                finish()
+            }
+            .setCancelable(false)
+            .show()
     }
 
     private fun checkSubscriptionStatus() {
