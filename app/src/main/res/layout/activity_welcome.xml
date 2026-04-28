@@ -192,9 +192,9 @@
                     android:id="@+id/tvIptvDirect"
                     android:layout_width="match_parent"
                     android:layout_height="56dp"
-                    android:text="IPTV Login"
+                    android:text="Already have IPTV credentials? Log in directly"
                     style="@style/OutlineButton"
-                    android:textSize="16sp"
+                    android:textSize="14sp"
                     android:textAllCaps="false" />
 
             </LinearLayout>
