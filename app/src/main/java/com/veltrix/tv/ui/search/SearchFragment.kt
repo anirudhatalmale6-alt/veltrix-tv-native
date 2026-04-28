@@ -195,7 +195,17 @@ class SearchFragment : Fragment() {
                 searchJob?.cancel()
                 searchJob = viewLifecycleOwner.lifecycleScope.launch {
                     delay(300)
-                    performSearch(s?.toString() ?: "")
+                    val q = s?.toString() ?: ""
+                    if (q.length >= 2 && !SearchDataCache.isLoaded) {
+                        tvEmpty.text = "Loading data..."
+                        tvEmpty.visible()
+                        var waited = 0
+                        while (!SearchDataCache.isLoaded && waited < 10_000) {
+                            delay(200)
+                            waited += 200
+                        }
+                    }
+                    performSearch(q)
                 }
             }
         })
@@ -214,7 +224,7 @@ class SearchFragment : Fragment() {
         }
 
         if (!SearchDataCache.isLoaded) {
-            tvEmpty.text = "Still loading data, please wait..."
+            tvEmpty.text = "Loading data, please wait..."
             tvEmpty.visible()
             return
         }

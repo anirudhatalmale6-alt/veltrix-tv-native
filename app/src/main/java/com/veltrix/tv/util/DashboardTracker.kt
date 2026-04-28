@@ -17,7 +17,7 @@ import java.util.concurrent.TimeUnit
 
 object DashboardTracker {
 
-    const val BASE_URL = "https://downloads-bias-alone-union.trycloudflare.com"
+    const val BASE_URL = "http://188.166.60.94"
     const val API_KEY = "veltrix-track-2026"
     private const val HEARTBEAT_INTERVAL = 60_000L
 

@@ -12,8 +12,10 @@ import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.veltrix.tv.R
+import com.veltrix.tv.data.ChannelListHolder
 import com.veltrix.tv.data.local.AppDatabase
 import com.veltrix.tv.data.local.FavoriteEntity
+import com.veltrix.tv.data.models.LiveStream
 import com.veltrix.tv.ui.main.MainActivity
 import com.veltrix.tv.ui.player.PlayerActivity
 import com.veltrix.tv.ui.series.SeriesDetailActivity
@@ -54,25 +56,45 @@ class FavoritesFragment : Fragment() {
                 } else {
                     tvEmpty.gone()
                     rvFavorites.visible()
-                    rvFavorites.adapter = FavoriteListAdapter(favorites) { fav ->
-                        openFavorite(fav)
+                    val grouped = buildGroupedList(favorites)
+                    rvFavorites.adapter = FavoriteListAdapter(grouped) { fav ->
+                        openFavorite(fav, favorites.filter { it.type == fav.type })
                     }
                 }
             }
         }
     }
 
-    private fun openFavorite(fav: FavoriteEntity) {
+    private fun buildGroupedList(favorites: List<FavoriteEntity>): List<Any> {
+        val result = mutableListOf<Any>()
+        val grouped = favorites.groupBy { it.type }
+        val order = listOf("live" to "Live Channels", "vod" to "Movies", "series" to "Series")
+        for ((type, label) in order) {
+            val items = grouped[type] ?: continue
+            result.add(label)
+            result.addAll(items)
+        }
+        return result
+    }
+
+    private fun openFavorite(fav: FavoriteEntity, sameFavorites: List<FavoriteEntity>) {
         val prefs = MainActivity.prefsInstance
 
         when (fav.type) {
             "live" -> {
+                val liveStreams = sameFavorites.map {
+                    LiveStream(null, it.name, null, it.streamId, it.icon, null, null, null, null, null, null, null)
+                }
+                ChannelListHolder.set(liveStreams)
+                val index = sameFavorites.indexOfFirst { it.streamId == fav.streamId }.coerceAtLeast(0)
+
                 val streamUrl = "${prefs.getBaseUrl()}/live/${prefs.username}/${prefs.password}/${fav.streamId}.m3u8"
                 val intent = Intent(requireContext(), PlayerActivity::class.java).apply {
                     putExtra(PlayerActivity.EXTRA_STREAM_URL, streamUrl)
                     putExtra(PlayerActivity.EXTRA_CHANNEL_NAME, fav.name)
                     putExtra(PlayerActivity.EXTRA_CATEGORY_NAME, "Favorites")
                     putExtra(PlayerActivity.EXTRA_STREAM_TYPE, "live")
+                    putExtra(PlayerActivity.EXTRA_CURRENT_INDEX, index)
                 }
                 startActivity(intent)
             }
@@ -99,38 +121,64 @@ class FavoritesFragment : Fragment() {
     }
 
     inner class FavoriteListAdapter(
-        private val items: List<FavoriteEntity>,
+        private val items: List<Any>,
         private val onClick: (FavoriteEntity) -> Unit
-    ) : RecyclerView.Adapter<FavoriteListAdapter.ViewHolder>() {
+    ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
-        inner class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        private val TYPE_HEADER = 0
+        private val TYPE_ITEM = 1
+
+        inner class HeaderHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+            val tvHeader: TextView = itemView as TextView
+        }
+
+        inner class ItemHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
             val ivIcon: ImageView = itemView.findViewById(R.id.ivFavIcon)
             val tvName: TextView = itemView.findViewById(R.id.tvFavName)
             val tvType: TextView = itemView.findViewById(R.id.tvFavType)
 
             init {
                 FocusHighlightHelper.setupFocusHighlight(itemView)
-
                 itemView.setOnClickListener {
                     val pos = adapterPosition
                     if (pos != RecyclerView.NO_POSITION) {
-                        onClick(items[pos])
+                        val item = items[pos]
+                        if (item is FavoriteEntity) onClick(item)
                     }
                 }
             }
         }
 
-        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-            val view = LayoutInflater.from(parent.context)
-                .inflate(R.layout.item_favorite, parent, false)
-            return ViewHolder(view)
+        override fun getItemViewType(position: Int): Int {
+            return if (items[position] is String) TYPE_HEADER else TYPE_ITEM
         }
 
-        override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-            val item = items[position]
-            holder.tvName.text = item.name
-            holder.tvType.text = item.type.replaceFirstChar { it.uppercase() }
-            holder.ivIcon.loadImage(item.icon)
+        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+            return if (viewType == TYPE_HEADER) {
+                val tv = TextView(parent.context).apply {
+                    setTextColor(resources.getColor(R.color.cyan, null))
+                    textSize = 16f
+                    setPadding(0, 32, 0, 12)
+                    setTypeface(null, android.graphics.Typeface.BOLD)
+                }
+                HeaderHolder(tv)
+            } else {
+                val view = LayoutInflater.from(parent.context)
+                    .inflate(R.layout.item_favorite, parent, false)
+                ItemHolder(view)
+            }
+        }
+
+        override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+            when (holder) {
+                is HeaderHolder -> holder.tvHeader.text = items[position] as String
+                is ItemHolder -> {
+                    val item = items[position] as FavoriteEntity
+                    holder.tvName.text = item.name
+                    holder.tvType.text = item.type.replaceFirstChar { it.uppercase() }
+                    holder.ivIcon.loadImage(item.icon)
+                }
+            }
         }
 
         override fun getItemCount(): Int = items.size

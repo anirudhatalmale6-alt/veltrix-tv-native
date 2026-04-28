@@ -20,6 +20,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.veltrix.tv.R
 import com.veltrix.tv.data.models.Category
 import com.veltrix.tv.data.models.SeriesItem
+import com.veltrix.tv.data.SearchDataCache
 import com.veltrix.tv.data.local.AppDatabase
 import com.veltrix.tv.data.local.FavoriteEntity
 import com.veltrix.tv.ui.live.CategoryAdapter
@@ -397,8 +398,13 @@ class SeriesFragment : Fragment(), MainActivity.DpadNavigable {
         viewLifecycleOwner.lifecycleScope.launch {
             try {
                 if (allSeriesCache.isEmpty()) {
-                    allSeriesCache = withContext(Dispatchers.IO) {
-                        MainActivity.apiService.getSeries(prefs.username, prefs.password)
+                    val cached = SearchDataCache.seriesItems
+                    allSeriesCache = if (cached.isNotEmpty()) {
+                        cached
+                    } else {
+                        withContext(Dispatchers.IO) {
+                            MainActivity.apiService.getSeries(prefs.username, prefs.password)
+                        }.also { if (it.isNotEmpty()) SearchDataCache.seriesItems = it }
                     }
                 }
                 progressBar.gone()
@@ -418,8 +424,10 @@ class SeriesFragment : Fragment(), MainActivity.DpadNavigable {
                 override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
                 override fun afterTextChanged(s: Editable?) {
                     val query = s?.toString()?.lowercase() ?: ""
+                    if (allSeriesCache.isEmpty()) return
                     if (query.length < 2) {
                         seriesAdapter.submitList(allSeriesCache)
+                        tvEmpty.gone()
                     } else {
                         val filtered = allSeriesCache.filter { it.name.lowercase().contains(query) }
                         seriesAdapter.submitList(filtered)

@@ -209,8 +209,8 @@ class PlayerActivity : AppCompatActivity() {
             toggleOverlay()
         }
 
-        // PiP/mini-player button: always show for live TV (mini-player), hide on old Android for VOD
-        if (streamType != "live" && Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+        // PiP button: requires Android 8+ (PiP API)
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
             btnPip.gone()
         }
 
@@ -257,10 +257,10 @@ class PlayerActivity : AppCompatActivity() {
         }
 
         btnPip.setOnClickListener {
-            if (streamType == "live") {
-                minimizeToMiniPlayer()
-            } else {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 enterPipMode()
+            } else if (streamType == "live") {
+                minimizeToMiniPlayer()
             }
         }
 
@@ -782,6 +782,14 @@ class PlayerActivity : AppCompatActivity() {
         }
     }
 
+    private fun showSeekIndicator() {
+        overlayInfo.visible()
+        isOverlayVisible = true
+        updateProgressUI()
+        handler.removeCallbacks(hideOverlayRunnable)
+        handler.postDelayed(hideOverlayRunnable, OVERLAY_HIDE_DELAY)
+    }
+
     private fun showOverlay() {
         overlayInfo.visible()
         controlsOverlay.visible()
@@ -877,16 +885,12 @@ class PlayerActivity : AppCompatActivity() {
                 }
             }
             KeyEvent.KEYCODE_DPAD_LEFT -> {
-                if (isControlsVisible) {
-                    // Let focus navigate between buttons when controls are showing
-                    super.onKeyDown(keyCode, event)
-                } else if (streamType != "live") {
-                    // Seek back 10s when controls are hidden (movies/series only)
+                if (streamType != "live") {
                     player?.let {
                         val pos = (it.currentPosition - 10000).coerceAtLeast(0)
                         it.seekTo(pos)
                     }
-                    showOverlay()
+                    showSeekIndicator()
                     true
                 } else {
                     showOverlay()
@@ -894,16 +898,12 @@ class PlayerActivity : AppCompatActivity() {
                 }
             }
             KeyEvent.KEYCODE_DPAD_RIGHT -> {
-                if (isControlsVisible) {
-                    // Let focus navigate between buttons when controls are showing
-                    super.onKeyDown(keyCode, event)
-                } else if (streamType != "live") {
-                    // Seek forward 10s when controls are hidden (movies/series only)
+                if (streamType != "live") {
                     player?.let {
                         val pos = (it.currentPosition + 10000).coerceAtMost(it.duration)
                         it.seekTo(pos)
                     }
-                    showOverlay()
+                    showSeekIndicator()
                     true
                 } else {
                     showOverlay()
@@ -930,6 +930,22 @@ class PlayerActivity : AppCompatActivity() {
                 saveWatchProgress()
                 finish()
                 true
+            }
+            KeyEvent.KEYCODE_CHANNEL_UP -> {
+                if (streamType == "live") {
+                    zapChannel(-1)
+                    true
+                } else {
+                    super.onKeyDown(keyCode, event)
+                }
+            }
+            KeyEvent.KEYCODE_CHANNEL_DOWN -> {
+                if (streamType == "live") {
+                    zapChannel(1)
+                    true
+                } else {
+                    super.onKeyDown(keyCode, event)
+                }
             }
             KeyEvent.KEYCODE_BACK -> {
                 if (isOverlayVisible) {

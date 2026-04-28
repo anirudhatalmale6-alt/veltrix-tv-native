@@ -188,18 +188,14 @@
                     android:textAllCaps="false"
                     android:layout_marginBottom="24dp" />
 
-                <!-- IPTV Direct Login link -->
-                <TextView
+                <Button
                     android:id="@+id/tvIptvDirect"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="Already have IPTV credentials? Log in directly"
-                    android:textColor="@color/text_dim"
-                    android:textSize="13sp"
-                    android:focusable="true"
-                    android:focusableInTouchMode="true"
-                    android:clickable="true"
-                    android:padding="8dp" />
+                    android:layout_width="match_parent"
+                    android:layout_height="56dp"
+                    android:text="IPTV Login"
+                    style="@style/OutlineButton"
+                    android:textSize="16sp"
+                    android:textAllCaps="false" />
 
             </LinearLayout>
 

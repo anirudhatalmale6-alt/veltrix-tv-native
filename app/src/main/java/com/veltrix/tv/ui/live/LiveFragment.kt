@@ -28,6 +28,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.veltrix.tv.R
 import com.veltrix.tv.data.ChannelListHolder
+import com.veltrix.tv.data.SearchDataCache
 import com.veltrix.tv.data.models.Category
 import com.veltrix.tv.data.models.LiveStream
 import com.veltrix.tv.data.local.AppDatabase
@@ -350,8 +351,13 @@ class LiveFragment : Fragment(), MainActivity.DpadNavigable {
         viewLifecycleOwner.lifecycleScope.launch {
             try {
                 if (allLiveCache.isEmpty()) {
-                    allLiveCache = withContext(Dispatchers.IO) {
-                        MainActivity.apiService.getLiveStreams(prefs.username, prefs.password)
+                    val cached = SearchDataCache.liveStreams
+                    allLiveCache = if (cached.isNotEmpty()) {
+                        cached
+                    } else {
+                        withContext(Dispatchers.IO) {
+                            MainActivity.apiService.getLiveStreams(prefs.username, prefs.password)
+                        }.also { if (it.isNotEmpty()) SearchDataCache.liveStreams = it }
                     }
                 }
                 progressBar.gone()
@@ -372,9 +378,11 @@ class LiveFragment : Fragment(), MainActivity.DpadNavigable {
                 override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
                 override fun afterTextChanged(s: Editable?) {
                     val query = s?.toString()?.lowercase() ?: ""
+                    if (allLiveCache.isEmpty()) return
                     if (query.length < 2) {
                         channelListAdapter.submitList(allLiveCache)
                         allStreams = allLiveCache
+                        tvEmpty.gone()
                     } else {
                         val filtered = allLiveCache.filter { it.name.lowercase().contains(query) }
                         channelListAdapter.submitList(filtered)

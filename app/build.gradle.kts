@@ -12,13 +12,23 @@ android {
         applicationId = "com.veltrix.tv"
         minSdk = 21
         targetSdk = 34
-        versionCode = 53
-        versionName = "1.0.53"
+        versionCode = 61
+        versionName = "1.0.61"
+    }
+
+    signingConfigs {
+        create("release") {
+            storeFile = file("../veltrix-tv.keystore")
+            storePassword = "veltrix2024"
+            keyAlias = "veltrix"
+            keyPassword = "veltrix2024"
+        }
     }
 
     buildTypes {
         release {
             isMinifyEnabled = false
+            signingConfig = signingConfigs.getByName("release")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"

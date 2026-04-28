@@ -25,6 +25,7 @@ import com.veltrix.tv.data.local.AppDatabase
 import com.veltrix.tv.data.local.FavoriteEntity
 import com.veltrix.tv.data.models.VodInfo
 import com.veltrix.tv.data.models.VodStream
+import com.veltrix.tv.data.SearchDataCache
 import com.veltrix.tv.ui.live.CategoryAdapter
 import com.veltrix.tv.ui.main.MainActivity
 import com.veltrix.tv.ui.player.PlayerActivity
@@ -593,8 +594,14 @@ class VodFragment : Fragment(), MainActivity.DpadNavigable {
         viewLifecycleOwner.lifecycleScope.launch {
             try {
                 if (allVodCache.isEmpty()) {
-                    allVodCache = withContext(Dispatchers.IO) {
-                        MainActivity.apiService.getVodStreams(prefs.username, prefs.password)
+                    // Use global cache if available, otherwise fetch
+                    val cached = SearchDataCache.vodStreams
+                    allVodCache = if (cached.isNotEmpty()) {
+                        cached
+                    } else {
+                        withContext(Dispatchers.IO) {
+                            MainActivity.apiService.getVodStreams(prefs.username, prefs.password)
+                        }.also { if (it.isNotEmpty()) SearchDataCache.vodStreams = it }
                     }
                 }
                 progressBar.gone()
@@ -614,8 +621,10 @@ class VodFragment : Fragment(), MainActivity.DpadNavigable {
                 override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
                 override fun afterTextChanged(s: Editable?) {
                     val query = s?.toString()?.lowercase() ?: ""
+                    if (allVodCache.isEmpty()) return
                     if (query.length < 2) {
                         vodAdapter.submitList(allVodCache)
+                        tvEmpty.gone()
                     } else {
                         val filtered = allVodCache.filter { it.name.lowercase().contains(query) }
                         vodAdapter.submitList(filtered)

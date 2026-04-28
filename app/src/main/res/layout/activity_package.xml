@@ -41,9 +41,7 @@
             android:orientation="vertical"
             android:padding="24dp"
             android:background="@drawable/package_card_bg"
-            android:focusable="true"
-            android:focusableInTouchMode="true"
-            android:clickable="true"
+            android:descendantFocusability="afterDescendants"
             android:layout_marginBottom="16dp">
 
             <TextView
@@ -112,9 +110,7 @@
             android:orientation="vertical"
             android:padding="24dp"
             android:background="@drawable/package_card_best_value_bg"
-            android:focusable="true"
-            android:focusableInTouchMode="true"
-            android:clickable="true"
+            android:descendantFocusability="afterDescendants"
             android:layout_marginBottom="16dp">
 
             <LinearLayout
@@ -221,9 +217,7 @@
             android:orientation="vertical"
             android:padding="24dp"
             android:background="@drawable/package_card_bg"
-            android:focusable="true"
-            android:focusableInTouchMode="true"
-            android:clickable="true"
+            android:descendantFocusability="afterDescendants"
             android:layout_marginBottom="16dp">
 
             <LinearLayout
@@ -316,9 +310,7 @@
             android:orientation="vertical"
             android:padding="24dp"
             android:background="@drawable/package_card_bg"
-            android:focusable="true"
-            android:focusableInTouchMode="true"
-            android:clickable="true"
+            android:descendantFocusability="afterDescendants"
             android:layout_marginBottom="8dp">
 
             <TextView
@@ -405,7 +397,6 @@
             android:textColor="#FF5252"
             android:textSize="14sp"
             android:focusable="true"
-            android:focusableInTouchMode="true"
             android:clickable="true"
             android:padding="8dp" />
 
