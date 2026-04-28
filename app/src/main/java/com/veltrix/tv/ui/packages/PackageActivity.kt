@@ -194,7 +194,7 @@ class PackageActivity : AppCompatActivity() {
             val data = obj.optJSONObject("data")
             return TrialResult(
                 success = true,
-                server = data?.optString("iptv_server", "http://8kstrong-vip.xyz") ?: "http://8kstrong-vip.xyz",
+                server = data?.optString("iptv_server", "http://veltrixstream.space") ?: "http://veltrixstream.space",
                 username = data?.optString("iptv_username", "") ?: "",
                 password = data?.optString("iptv_password", "") ?: ""
             )
@@ -214,7 +214,7 @@ class PackageActivity : AppCompatActivity() {
             .setTitle("Trial Activated!")
             .setMessage("Your IPTV credentials:\n\nServer: $server\nUsername: $username\nPassword: $password\n\nCredentials have been saved. You can start watching now!")
             .setPositiveButton("Start Watching") { _, _ ->
-                DashboardTracker.init(this, username, "1.0.62")
+                DashboardTracker.init(this, username, "1.0.64")
                 val intent = Intent(this, com.veltrix.tv.ui.main.MainActivity::class.java).apply {
                     flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                 }
