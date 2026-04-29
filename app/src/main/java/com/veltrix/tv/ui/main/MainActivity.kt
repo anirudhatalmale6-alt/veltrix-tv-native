@@ -190,10 +190,7 @@ class MainActivity : AppCompatActivity() {
         setupSidebar()
         debug("Ready. Use remote to navigate.")
 
-        // Preload search data after a delay so it doesn't compete with initial UI loading
-        android.os.Handler(mainLooper).postDelayed({
-            try { preloadSearchData() } catch (_: OutOfMemoryError) {}
-        }, 15000)
+        // Search data is loaded on-demand when user opens SearchFragment
     }
 
     private fun debug(msg: String) {
@@ -220,7 +217,7 @@ class MainActivity : AppCompatActivity() {
             .create(XtreamApiService::class.java)
     }
 
-    private fun preloadSearchData() {
+    fun preloadSearchData() {
         if (SearchDataCache.isLoaded || SearchDataCache.isLoading) return
         SearchDataCache.isLoading = true
 
@@ -256,7 +253,7 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun streamParseAndInsert(
+    fun streamParseAndInsert(
         client: OkHttpClient,
         baseUrl: String,
         action: String,
@@ -297,14 +294,28 @@ class MainActivity : AppCompatActivity() {
                 reader.beginObject()
                 while (reader.hasNext()) {
                     val key = reader.nextName()
-                    when (key) {
-                        "name" -> name = reader.nextString() ?: ""
-                        "stream_id" -> streamId = try { reader.nextInt() } catch (_: Exception) { 0 }
-                        "series_id" -> seriesId = try { reader.nextInt() } catch (_: Exception) { 0 }
-                        "stream_icon", "cover" -> icon = try { reader.nextString() } catch (_: Exception) { null }
-                        "category_id" -> categoryId = try { reader.nextString() } catch (_: Exception) { null }
-                        "container_extension" -> containerExt = try { reader.nextString() } catch (_: Exception) { null }
-                        else -> reader.skipValue()
+                    if (reader.peek() == com.google.gson.stream.JsonToken.NULL) {
+                        reader.skipValue()
+                        continue
+                    }
+                    try {
+                        when (key) {
+                            "name" -> name = reader.nextString() ?: ""
+                            "stream_id" -> {
+                                val v = reader.nextString()
+                                streamId = v?.toIntOrNull() ?: 0
+                            }
+                            "series_id" -> {
+                                val v = reader.nextString()
+                                seriesId = v?.toIntOrNull() ?: 0
+                            }
+                            "stream_icon", "cover" -> icon = reader.nextString()
+                            "category_id" -> categoryId = reader.nextString()
+                            "container_extension" -> containerExt = reader.nextString()
+                            else -> reader.skipValue()
+                        }
+                    } catch (_: Exception) {
+                        try { reader.skipValue() } catch (_: Exception) {}
                     }
                 }
                 reader.endObject()

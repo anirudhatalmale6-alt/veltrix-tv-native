@@ -12,8 +12,8 @@ android {
         applicationId = "com.veltrix.tv"
         minSdk = 21
         targetSdk = 34
-        versionCode = 71
-        versionName = "1.0.71"
+        versionCode = 72
+        versionName = "1.0.72"
     }
 
     signingConfigs {

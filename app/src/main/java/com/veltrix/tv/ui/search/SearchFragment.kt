@@ -18,7 +18,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.veltrix.tv.R
 import com.veltrix.tv.data.SearchDataCache
 import com.veltrix.tv.data.local.AppDatabase
-import com.veltrix.tv.data.local.SearchIndexEntity
+import com.veltrix.tv.data.local.SearchIndexDao
 import com.veltrix.tv.ui.main.MainActivity
 import com.veltrix.tv.ui.player.PlayerActivity
 import com.veltrix.tv.ui.series.SeriesDetailActivity
@@ -44,6 +44,7 @@ class SearchFragment : Fragment() {
     private lateinit var tabSeries: TextView
 
     private var searchJob: Job? = null
+    private var loadJob: Job? = null
     private var currentFilter = "all"
 
     override fun onCreateView(
@@ -69,28 +70,95 @@ class SearchFragment : Fragment() {
 
         setupTabs()
         setupSearch()
-        checkDataReady()
+        startDataLoad()
     }
 
-    private fun checkDataReady() {
+    private fun startDataLoad() {
         if (SearchDataCache.isLoaded) {
             progressBar.gone()
             updateStatusText()
             return
         }
 
-        progressBar.visible()
-        tvEmpty.gone()
-
-        viewLifecycleOwner.lifecycleScope.launch {
-            var waited = 0
-            while (SearchDataCache.isLoading && !SearchDataCache.isLoaded && waited < 60_000) {
-                delay(500)
-                waited += 500
+        if (SearchDataCache.isLoading) {
+            progressBar.visible()
+            tvEmpty.text = "Building search index..."
+            tvEmpty.visible()
+            loadJob = viewLifecycleOwner.lifecycleScope.launch {
+                while (SearchDataCache.isLoading && !SearchDataCache.isLoaded) {
+                    delay(1000)
+                    if (!isAdded) return@launch
+                    val dao = AppDatabase.getInstance(requireContext()).searchIndexDao()
+                    val c = withContext(Dispatchers.IO) { dao.countSync() }
+                    if (c > 0) {
+                        tvEmpty.text = "Indexed $c items so far... You can search now"
+                        SearchDataCache.isLoaded = true
+                    }
+                }
+                if (!isAdded) return@launch
+                progressBar.gone()
+                updateStatusText()
             }
-            if (!isAdded) return@launch
-            progressBar.gone()
-            updateStatusText()
+            return
+        }
+
+        progressBar.visible()
+        tvEmpty.text = "Building search index..."
+        tvEmpty.visible()
+
+        val activity = requireActivity() as? MainActivity ?: return
+        val dao = AppDatabase.getInstance(requireContext()).searchIndexDao()
+        val client = MainActivity.createHttpClient(30, 300)
+        val baseUrl = MainActivity.prefsInstance.getBaseUrl().trimEnd('/')
+
+        SearchDataCache.isLoading = true
+
+        loadJob = viewLifecycleOwner.lifecycleScope.launch(Dispatchers.IO) {
+            try {
+                dao.deleteAllSync()
+
+                SearchDataCache.liveCount = activity.streamParseAndInsert(
+                    client, baseUrl, "get_live_streams", "live", dao
+                )
+                withContext(Dispatchers.Main) {
+                    if (!isAdded) return@withContext
+                    SearchDataCache.isLoaded = true
+                    tvEmpty.text = "Indexed ${SearchDataCache.liveCount} channels. Loading movies..."
+                }
+
+                SearchDataCache.vodCount = activity.streamParseAndInsert(
+                    client, baseUrl, "get_vod_streams", "vod", dao
+                )
+                withContext(Dispatchers.Main) {
+                    if (!isAdded) return@withContext
+                    tvEmpty.text = "Indexed ${SearchDataCache.liveCount + SearchDataCache.vodCount} items. Loading series..."
+                }
+
+                SearchDataCache.seriesCount = activity.streamParseAndInsert(
+                    client, baseUrl, "get_series", "series", dao
+                )
+
+                SearchDataCache.isLoading = false
+                withContext(Dispatchers.Main) {
+                    if (!isAdded) return@withContext
+                    progressBar.gone()
+                    updateStatusText()
+                }
+            } catch (e: Exception) {
+                SearchDataCache.isLoading = false
+                val c = try { dao.countSync() } catch (_: Exception) { 0 }
+                if (c > 0) SearchDataCache.isLoaded = true
+                withContext(Dispatchers.Main) {
+                    if (!isAdded) return@withContext
+                    progressBar.gone()
+                    if (c > 0) {
+                        updateStatusText()
+                    } else {
+                        tvEmpty.text = "Error loading data. Try again later."
+                        tvEmpty.visible()
+                    }
+                }
+            }
         }
     }
 
@@ -99,8 +167,9 @@ class SearchFragment : Fragment() {
         val live = SearchDataCache.liveCount
         val vod = SearchDataCache.vodCount
         val series = SearchDataCache.seriesCount
-        if (live == 0 && vod == 0 && series == 0) {
-            tvEmpty.text = "Loading data, please wait..."
+        val total = live + vod + series
+        if (total == 0) {
+            tvEmpty.text = "Building search index..."
         } else {
             tvEmpty.text = "Search $live channels, $vod movies, $series series"
         }
@@ -164,7 +233,7 @@ class SearchFragment : Fragment() {
         }
 
         if (!SearchDataCache.isLoaded) {
-            tvEmpty.text = "Loading data, please wait..."
+            tvEmpty.text = "Building search index, please wait..."
             tvEmpty.visible()
             return
         }
@@ -174,11 +243,13 @@ class SearchFragment : Fragment() {
             val q = query.lowercase()
 
             val dbResults = withContext(Dispatchers.IO) {
-                if (currentFilter == "all") {
-                    dao.searchAll(q, 150)
-                } else {
-                    dao.searchByType(currentFilter, q, 50)
-                }
+                try {
+                    if (currentFilter == "all") {
+                        dao.searchAll(q, 150)
+                    } else {
+                        dao.searchByType(currentFilter, q, 50)
+                    }
+                } catch (_: Exception) { emptyList() }
             }
 
             if (!isAdded) return@launch
@@ -297,6 +368,7 @@ class SearchFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
+        loadJob?.cancel()
         searchJob?.cancel()
     }
 }
