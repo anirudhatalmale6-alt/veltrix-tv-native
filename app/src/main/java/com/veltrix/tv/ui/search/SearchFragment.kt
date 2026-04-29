@@ -102,12 +102,46 @@ class SearchFragment : Fragment() {
             return
         }
 
+        val dao = AppDatabase.getInstance(requireContext()).searchIndexDao()
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            val existingCount = withContext(Dispatchers.IO) {
+                try { dao.countSync() } catch (_: Exception) { 0 }
+            }
+            if (!isAdded) return@launch
+
+            if (existingCount > 0) {
+                SearchDataCache.isLoaded = true
+                progressBar.gone()
+                val prefs = requireContext().getSharedPreferences("veltrix_search", 0)
+                SearchDataCache.liveCount = prefs.getInt("live_count", 0)
+                SearchDataCache.vodCount = prefs.getInt("vod_count", 0)
+                SearchDataCache.seriesCount = prefs.getInt("series_count", 0)
+                if (SearchDataCache.liveCount + SearchDataCache.vodCount + SearchDataCache.seriesCount == 0) {
+                    tvEmpty.text = "Search $existingCount items"
+                } else {
+                    updateStatusText()
+                }
+                tvEmpty.visible()
+
+                val lastBuilt = prefs.getLong("last_built", 0)
+                val hoursSinceBuilt = (System.currentTimeMillis() - lastBuilt) / 3600000
+                if (hoursSinceBuilt >= 24) {
+                    rebuildIndex(dao)
+                }
+                return@launch
+            }
+
+            rebuildIndex(dao)
+        }
+    }
+
+    private fun rebuildIndex(dao: SearchIndexDao) {
         progressBar.visible()
         tvEmpty.text = "Building search index..."
         tvEmpty.visible()
 
         val activity = requireActivity() as? MainActivity ?: return
-        val dao = AppDatabase.getInstance(requireContext()).searchIndexDao()
         val client = MainActivity.createHttpClient(30, 300)
         val baseUrl = MainActivity.prefsInstance.getBaseUrl().trimEnd('/')
 
@@ -123,6 +157,7 @@ class SearchFragment : Fragment() {
                 withContext(Dispatchers.Main) {
                     if (!isAdded) return@withContext
                     SearchDataCache.isLoaded = true
+                    progressBar.gone()
                     tvEmpty.text = "Indexed ${SearchDataCache.liveCount} channels. Loading movies..."
                 }
 
@@ -139,6 +174,15 @@ class SearchFragment : Fragment() {
                 )
 
                 SearchDataCache.isLoading = false
+
+                val prefs = activity.getSharedPreferences("veltrix_search", 0)
+                prefs.edit()
+                    .putInt("live_count", SearchDataCache.liveCount)
+                    .putInt("vod_count", SearchDataCache.vodCount)
+                    .putInt("series_count", SearchDataCache.seriesCount)
+                    .putLong("last_built", System.currentTimeMillis())
+                    .apply()
+
                 withContext(Dispatchers.Main) {
                     if (!isAdded) return@withContext
                     progressBar.gone()
