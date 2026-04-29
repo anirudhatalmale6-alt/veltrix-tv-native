@@ -437,11 +437,10 @@ class LiveFragment : Fragment(), MainActivity.DpadNavigable {
                 player.volume = 1f
                 player.setWakeMode(C.WAKE_MODE_NETWORK)
 
-                // Force max quality for preview too
                 player.trackSelectionParameters = player.trackSelectionParameters
                     .buildUpon()
                     .setMaxVideoSize(Int.MAX_VALUE, Int.MAX_VALUE)
-                    .setForceHighestSupportedBitrate(true)
+                    .setForceHighestSupportedBitrate(false)
                     .build()
 
                 player.addListener(object : Player.Listener {

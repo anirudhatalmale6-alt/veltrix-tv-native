@@ -23,6 +23,7 @@ import androidx.media3.ui.PlayerView
 import com.veltrix.tv.R
 import com.veltrix.tv.data.PrefsManager
 import com.veltrix.tv.data.SearchDataCache
+import com.veltrix.tv.data.local.AppDatabase
 import com.veltrix.tv.data.api.XtreamApiService
 import com.veltrix.tv.ui.favorites.FavoritesFragment
 import com.veltrix.tv.ui.history.HistoryFragment
@@ -187,9 +188,12 @@ class MainActivity : AppCompatActivity() {
 
         initApi()
         setupSidebar()
-        // Preload search data after a short delay so it's ready when user searches
-        handler.postDelayed({ preloadSearchData() }, 5000)
         debug("Ready. Use remote to navigate.")
+
+        // Preload search data after a delay so it doesn't compete with initial UI loading
+        android.os.Handler(mainLooper).postDelayed({
+            try { preloadSearchData() } catch (_: OutOfMemoryError) {}
+        }, 15000)
     }
 
     private fun debug(msg: String) {
@@ -220,40 +224,68 @@ class MainActivity : AppCompatActivity() {
         if (SearchDataCache.isLoaded || SearchDataCache.isLoading) return
         SearchDataCache.isLoading = true
 
-        lifecycleScope.launch {
+        val dao = AppDatabase.getInstance(this).searchIndexDao()
+
+        lifecycleScope.launch(Dispatchers.IO) {
             try {
-                val liveJob = async(Dispatchers.IO) {
+                dao.deleteAll()
+
+                val liveJob = async {
                     withTimeoutOrNull(30_000) {
                         try { apiService.getLiveStreams(prefs.username, prefs.password) }
                         catch (_: Exception) { null }
-                    } ?: emptyList()
+                    }
                 }
-                val vodJob = async(Dispatchers.IO) {
+                val vodJob = async {
                     withTimeoutOrNull(90_000) {
                         try { apiService.getVodStreams(prefs.username, prefs.password) }
                         catch (_: Exception) { null }
-                    } ?: emptyList()
+                    }
                 }
-                val seriesJob = async(Dispatchers.IO) {
+                val seriesJob = async {
                     withTimeoutOrNull(90_000) {
                         try { apiService.getSeries(prefs.username, prefs.password) }
                         catch (_: Exception) { null }
-                    } ?: emptyList()
+                    }
                 }
 
                 val live = liveJob.await()
-                val vod = vodJob.await()
-                val series = seriesJob.await()
-
-                // Only mark loaded if we got at least some data
-                if (live.isNotEmpty() || vod.isNotEmpty() || series.isNotEmpty()) {
-                    SearchDataCache.liveStreams = live
-                    SearchDataCache.vodStreams = vod
-                    SearchDataCache.seriesItems = series
-                    SearchDataCache.isLoaded = true
+                if (live != null && live.isNotEmpty()) {
+                    val batchSize = 500
+                    for (i in live.indices step batchSize) {
+                        val batch = live.subList(i, minOf(i + batchSize, live.size))
+                        dao.insertAll(SearchDataCache.toLiveEntities(batch))
+                    }
+                    SearchDataCache.liveCount = live.size
                 }
+
+                val vod = vodJob.await()
+                if (vod != null && vod.isNotEmpty()) {
+                    val batchSize = 500
+                    for (i in vod.indices step batchSize) {
+                        val batch = vod.subList(i, minOf(i + batchSize, vod.size))
+                        dao.insertAll(SearchDataCache.toVodEntities(batch))
+                    }
+                    SearchDataCache.vodCount = vod.size
+                }
+
+                val series = seriesJob.await()
+                if (series != null && series.isNotEmpty()) {
+                    val batchSize = 500
+                    for (i in series.indices step batchSize) {
+                        val batch = series.subList(i, minOf(i + batchSize, series.size))
+                        dao.insertAll(SearchDataCache.toSeriesEntities(batch))
+                    }
+                    SearchDataCache.seriesCount = series.size
+                }
+
+                val total = dao.count()
+                if (total > 0) SearchDataCache.isLoaded = true
                 SearchDataCache.isLoading = false
-                debug("Search cache: ${live.size} live, ${vod.size} vod, ${series.size} series")
+                debug("Search DB: $total items (${SearchDataCache.liveCount} live, ${SearchDataCache.vodCount} vod, ${SearchDataCache.seriesCount} series)")
+            } catch (e: OutOfMemoryError) {
+                SearchDataCache.isLoading = false
+                debug("Search preload OOM")
             } catch (e: Exception) {
                 SearchDataCache.isLoading = false
                 debug("Search preload error: ${e.message}")
@@ -468,9 +500,8 @@ class MainActivity : AppCompatActivity() {
             closeMiniPlayer()
             miniPlayerUrl = streamUrl
 
-            // Use larger buffer and long timeouts for mini-player too
             val loadControl = DefaultLoadControl.Builder()
-                .setBufferDurationsMs(60_000, 120_000, 5_000, 10_000)
+                .setBufferDurationsMs(10_000, 20_000, 2_000, 5_000)
                 .build()
             val streamClient = createStreamClient(30, 60)
             val httpDataSourceFactory = OkHttpDataSource.Factory(streamClient)

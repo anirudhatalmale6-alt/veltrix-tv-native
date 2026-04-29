@@ -623,8 +623,8 @@ class PlayerActivity : AppCompatActivity() {
         try {
             val loadControl = DefaultLoadControl.Builder()
                 .setBufferDurationsMs(
-                    30_000,   // min buffer: 30s
-                    60_000,   // max buffer: 60s
+                    15_000,   // min buffer: 15s
+                    30_000,   // max buffer: 30s
                     2_500,    // buffer for playback: 2.5s
                     5_000     // buffer for rebuffer: 5s
                 )
@@ -645,7 +645,7 @@ class PlayerActivity : AppCompatActivity() {
                 it.trackSelectionParameters = it.trackSelectionParameters
                     .buildUpon()
                     .setMaxVideoSize(Int.MAX_VALUE, Int.MAX_VALUE)
-                    .setForceHighestSupportedBitrate(true)
+                    .setForceHighestSupportedBitrate(false)
                     .setPreferredTextLanguage("en")
                     .build()
 
@@ -862,30 +862,34 @@ class PlayerActivity : AppCompatActivity() {
                 true
             }
             KeyEvent.KEYCODE_DPAD_UP -> {
-                if (streamType == "live") {
+                if (isOverlayVisible) {
+                    resetOverlayTimer()
+                    super.onKeyDown(keyCode, event)
+                } else if (streamType == "live") {
                     zapChannel(-1)
                     true
-                } else if (isControlsVisible) {
-                    // Let focus navigate within controls
-                    super.onKeyDown(keyCode, event)
                 } else {
                     showOverlay()
                     true
                 }
             }
             KeyEvent.KEYCODE_DPAD_DOWN -> {
-                if (streamType == "live") {
+                if (isOverlayVisible) {
+                    resetOverlayTimer()
+                    super.onKeyDown(keyCode, event)
+                } else if (streamType == "live") {
                     zapChannel(1)
                     true
-                } else if (isControlsVisible) {
-                    super.onKeyDown(keyCode, event)
                 } else {
                     showOverlay()
                     true
                 }
             }
             KeyEvent.KEYCODE_DPAD_LEFT -> {
-                if (streamType != "live") {
+                if (isOverlayVisible) {
+                    resetOverlayTimer()
+                    super.onKeyDown(keyCode, event)
+                } else if (streamType != "live") {
                     player?.let {
                         val pos = (it.currentPosition - 10000).coerceAtLeast(0)
                         it.seekTo(pos)
@@ -898,7 +902,10 @@ class PlayerActivity : AppCompatActivity() {
                 }
             }
             KeyEvent.KEYCODE_DPAD_RIGHT -> {
-                if (streamType != "live") {
+                if (isOverlayVisible) {
+                    resetOverlayTimer()
+                    super.onKeyDown(keyCode, event)
+                } else if (streamType != "live") {
                     player?.let {
                         val pos = (it.currentPosition + 10000).coerceAtMost(it.duration)
                         it.seekTo(pos)

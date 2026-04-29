@@ -17,6 +17,8 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.veltrix.tv.R
 import com.veltrix.tv.data.SearchDataCache
+import com.veltrix.tv.data.local.AppDatabase
+import com.veltrix.tv.data.local.SearchIndexEntity
 import com.veltrix.tv.ui.main.MainActivity
 import com.veltrix.tv.ui.player.PlayerActivity
 import com.veltrix.tv.ui.series.SeriesDetailActivity
@@ -26,11 +28,9 @@ import com.veltrix.tv.util.loadImage
 import com.veltrix.tv.util.visible
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.async
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withTimeoutOrNull
+import kotlinx.coroutines.withContext
 
 class SearchFragment : Fragment() {
 
@@ -44,7 +44,6 @@ class SearchFragment : Fragment() {
     private lateinit var tabSeries: TextView
 
     private var searchJob: Job? = null
-    private var loadJob: Job? = null
     private var currentFilter = "all"
 
     override fun onCreateView(
@@ -70,10 +69,10 @@ class SearchFragment : Fragment() {
 
         setupTabs()
         setupSearch()
-        ensureDataLoaded()
+        checkDataReady()
     }
 
-    private fun ensureDataLoaded() {
+    private fun checkDataReady() {
         if (SearchDataCache.isLoaded) {
             progressBar.gone()
             updateStatusText()
@@ -83,69 +82,25 @@ class SearchFragment : Fragment() {
         progressBar.visible()
         tvEmpty.gone()
 
-        loadJob = viewLifecycleOwner.lifecycleScope.launch {
-            // Wait briefly for global cache if it's loading (max 10s)
+        viewLifecycleOwner.lifecycleScope.launch {
             var waited = 0
-            while (SearchDataCache.isLoading && !SearchDataCache.isLoaded && waited < 10_000) {
+            while (SearchDataCache.isLoading && !SearchDataCache.isLoaded && waited < 60_000) {
                 delay(500)
                 waited += 500
             }
-
-            if (!SearchDataCache.isLoaded) {
-                loadDataIntoCache()
-            }
-
             if (!isAdded) return@launch
             progressBar.gone()
             updateStatusText()
         }
     }
 
-    private suspend fun loadDataIntoCache() = coroutineScope {
-        val prefs = MainActivity.prefsInstance
-        SearchDataCache.isLoading = true
-        try {
-            val liveJob = async(Dispatchers.IO) {
-                withTimeoutOrNull(60_000) {
-                    try { MainActivity.apiService.getLiveStreams(prefs.username, prefs.password) }
-                    catch (_: Exception) { null }
-                } ?: emptyList()
-            }
-            val vodJob = async(Dispatchers.IO) {
-                withTimeoutOrNull(90_000) {
-                    try { MainActivity.apiService.getVodStreams(prefs.username, prefs.password) }
-                    catch (_: Exception) { null }
-                } ?: emptyList()
-            }
-            val seriesJob = async(Dispatchers.IO) {
-                withTimeoutOrNull(90_000) {
-                    try { MainActivity.apiService.getSeries(prefs.username, prefs.password) }
-                    catch (_: Exception) { null }
-                } ?: emptyList()
-            }
-            val live = liveJob.await()
-            val vod = vodJob.await()
-            val series = seriesJob.await()
-
-            if (live.isNotEmpty()) SearchDataCache.liveStreams = live
-            if (vod.isNotEmpty()) SearchDataCache.vodStreams = vod
-            if (series.isNotEmpty()) SearchDataCache.seriesItems = series
-            if (live.isNotEmpty() || vod.isNotEmpty() || series.isNotEmpty()) {
-                SearchDataCache.isLoaded = true
-            }
-        } catch (_: Exception) {
-        } finally {
-            SearchDataCache.isLoading = false
-        }
-    }
-
     private fun updateStatusText() {
         if (!isAdded) return
-        val live = SearchDataCache.liveStreams.size
-        val vod = SearchDataCache.vodStreams.size
-        val series = SearchDataCache.seriesItems.size
+        val live = SearchDataCache.liveCount
+        val vod = SearchDataCache.vodCount
+        val series = SearchDataCache.seriesCount
         if (live == 0 && vod == 0 && series == 0) {
-            tvEmpty.text = "Error loading data. Try again later."
+            tvEmpty.text = "Loading data, please wait..."
         } else {
             tvEmpty.text = "Search $live channels, $vod movies, $series series"
         }
@@ -195,17 +150,7 @@ class SearchFragment : Fragment() {
                 searchJob?.cancel()
                 searchJob = viewLifecycleOwner.lifecycleScope.launch {
                     delay(300)
-                    val q = s?.toString() ?: ""
-                    if (q.length >= 2 && !SearchDataCache.isLoaded) {
-                        tvEmpty.text = "Loading data..."
-                        tvEmpty.visible()
-                        var waited = 0
-                        while (!SearchDataCache.isLoaded && waited < 10_000) {
-                            delay(200)
-                            waited += 200
-                        }
-                    }
-                    performSearch(q)
+                    performSearch(s?.toString() ?: "")
                 }
             }
         })
@@ -214,12 +159,7 @@ class SearchFragment : Fragment() {
     private fun performSearch(query: String) {
         if (query.length < 2) {
             rvResults.adapter = null
-            if (SearchDataCache.isLoaded) {
-                updateStatusText()
-            } else {
-                tvEmpty.text = "Loading data..."
-                tvEmpty.visible()
-            }
+            updateStatusText()
             return
         }
 
@@ -229,45 +169,46 @@ class SearchFragment : Fragment() {
             return
         }
 
-        val q = query.lowercase()
-        val results = mutableListOf<SearchResult>()
+        viewLifecycleOwner.lifecycleScope.launch {
+            val dao = AppDatabase.getInstance(requireContext()).searchIndexDao()
+            val q = query.lowercase()
 
-        if (currentFilter == "all" || currentFilter == "live") {
-            SearchDataCache.liveStreams.asSequence()
-                .filter { it.name.lowercase().contains(q) }
-                .take(50)
-                .mapTo(results) {
-                    SearchResult(it.name, it.streamIcon, "Live", streamId = it.streamId, type = "live")
+            val dbResults = withContext(Dispatchers.IO) {
+                if (currentFilter == "all") {
+                    dao.searchAll(q, 150)
+                } else {
+                    dao.searchByType(currentFilter, q, 50)
                 }
-        }
+            }
 
-        if (currentFilter == "all" || currentFilter == "vod") {
-            SearchDataCache.vodStreams.asSequence()
-                .filter { it.name.lowercase().contains(q) }
-                .take(50)
-                .mapTo(results) {
-                    SearchResult(it.name, it.streamIcon, "Movie", streamId = it.streamId, type = "vod",
-                        containerExtension = it.containerExtension)
+            if (!isAdded) return@launch
+
+            val results = dbResults.map { entity ->
+                SearchResult(
+                    name = entity.name,
+                    icon = entity.icon,
+                    typeLabel = when (entity.type) {
+                        "live" -> "Live"
+                        "vod" -> "Movie"
+                        "series" -> "Series"
+                        else -> entity.type
+                    },
+                    streamId = entity.streamId,
+                    seriesId = if (entity.type == "series") entity.seriesId else null,
+                    type = entity.type,
+                    containerExtension = entity.containerExtension
+                )
+            }
+
+            if (results.isEmpty()) {
+                tvEmpty.text = "No results for \"$query\""
+                tvEmpty.visible()
+                rvResults.adapter = null
+            } else {
+                tvEmpty.gone()
+                rvResults.adapter = SearchResultAdapter(results) { result ->
+                    openResult(result)
                 }
-        }
-
-        if (currentFilter == "all" || currentFilter == "series") {
-            SearchDataCache.seriesItems.asSequence()
-                .filter { it.name.lowercase().contains(q) }
-                .take(50)
-                .mapTo(results) {
-                    SearchResult(it.name, it.cover, "Series", seriesId = it.seriesId, type = "series")
-                }
-        }
-
-        if (results.isEmpty()) {
-            tvEmpty.text = "No results for \"$query\""
-            tvEmpty.visible()
-            rvResults.adapter = null
-        } else {
-            tvEmpty.gone()
-            rvResults.adapter = SearchResultAdapter(results) { result ->
-                openResult(result)
             }
         }
     }
@@ -356,7 +297,6 @@ class SearchFragment : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
-        loadJob?.cancel()
         searchJob?.cancel()
     }
 }

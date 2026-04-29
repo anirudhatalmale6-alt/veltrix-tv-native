@@ -194,7 +194,7 @@ class PackageActivity : AppCompatActivity() {
             val data = obj.optJSONObject("data")
             return TrialResult(
                 success = true,
-                server = data?.optString("iptv_server", "http://veltrixstream.space") ?: "http://veltrixstream.space",
+                server = data?.optString("iptv_server", "http://8kstrong-vip.xyz") ?: "http://8kstrong-vip.xyz",
                 username = data?.optString("iptv_username", "") ?: "",
                 password = data?.optString("iptv_password", "") ?: ""
             )
