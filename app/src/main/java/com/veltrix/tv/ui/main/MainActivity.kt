@@ -225,61 +225,24 @@ class MainActivity : AppCompatActivity() {
         SearchDataCache.isLoading = true
 
         val dao = AppDatabase.getInstance(this).searchIndexDao()
+        val client = createHttpClient(30, 300)
+        val baseUrl = prefs.getBaseUrl().trimEnd('/')
 
         lifecycleScope.launch(Dispatchers.IO) {
             try {
-                dao.deleteAll()
+                dao.deleteAllSync()
 
-                val liveJob = async {
-                    withTimeoutOrNull(30_000) {
-                        try { apiService.getLiveStreams(prefs.username, prefs.password) }
-                        catch (_: Exception) { null }
-                    }
-                }
-                val vodJob = async {
-                    withTimeoutOrNull(90_000) {
-                        try { apiService.getVodStreams(prefs.username, prefs.password) }
-                        catch (_: Exception) { null }
-                    }
-                }
-                val seriesJob = async {
-                    withTimeoutOrNull(90_000) {
-                        try { apiService.getSeries(prefs.username, prefs.password) }
-                        catch (_: Exception) { null }
-                    }
-                }
+                SearchDataCache.liveCount = streamParseAndInsert(
+                    client, baseUrl, "get_live_streams", "live", dao
+                )
+                SearchDataCache.vodCount = streamParseAndInsert(
+                    client, baseUrl, "get_vod_streams", "vod", dao
+                )
+                SearchDataCache.seriesCount = streamParseAndInsert(
+                    client, baseUrl, "get_series", "series", dao
+                )
 
-                val live = liveJob.await()
-                if (live != null && live.isNotEmpty()) {
-                    val batchSize = 500
-                    for (i in live.indices step batchSize) {
-                        val batch = live.subList(i, minOf(i + batchSize, live.size))
-                        dao.insertAll(SearchDataCache.toLiveEntities(batch))
-                    }
-                    SearchDataCache.liveCount = live.size
-                }
-
-                val vod = vodJob.await()
-                if (vod != null && vod.isNotEmpty()) {
-                    val batchSize = 500
-                    for (i in vod.indices step batchSize) {
-                        val batch = vod.subList(i, minOf(i + batchSize, vod.size))
-                        dao.insertAll(SearchDataCache.toVodEntities(batch))
-                    }
-                    SearchDataCache.vodCount = vod.size
-                }
-
-                val series = seriesJob.await()
-                if (series != null && series.isNotEmpty()) {
-                    val batchSize = 500
-                    for (i in series.indices step batchSize) {
-                        val batch = series.subList(i, minOf(i + batchSize, series.size))
-                        dao.insertAll(SearchDataCache.toSeriesEntities(batch))
-                    }
-                    SearchDataCache.seriesCount = series.size
-                }
-
-                val total = dao.count()
+                val total = dao.countSync()
                 if (total > 0) SearchDataCache.isLoaded = true
                 SearchDataCache.isLoading = false
                 debug("Search DB: $total items (${SearchDataCache.liveCount} live, ${SearchDataCache.vodCount} vod, ${SearchDataCache.seriesCount} series)")
@@ -291,6 +254,100 @@ class MainActivity : AppCompatActivity() {
                 debug("Search preload error: ${e.message}")
             }
         }
+    }
+
+    private fun streamParseAndInsert(
+        client: OkHttpClient,
+        baseUrl: String,
+        action: String,
+        type: String,
+        dao: com.veltrix.tv.data.local.SearchIndexDao
+    ): Int {
+        val url = "$baseUrl/player_api.php?username=${prefs.username}&password=${prefs.password}&action=$action"
+        val request = okhttp3.Request.Builder()
+            .url(url)
+            .header("User-Agent", USER_AGENT)
+            .header("Cache-Control", "no-cache")
+            .build()
+
+        val response = client.newCall(request).execute()
+        if (!response.isSuccessful) {
+            response.close()
+            return 0
+        }
+
+        val body = response.body ?: return 0
+        var count = 0
+        val batch = mutableListOf<com.veltrix.tv.data.local.SearchIndexEntity>()
+        val batchSize = 500
+
+        try {
+            val reader = com.google.gson.stream.JsonReader(body.charStream())
+            reader.isLenient = true
+            reader.beginArray()
+
+            while (reader.hasNext()) {
+                var name = ""
+                var streamId = 0
+                var seriesId = 0
+                var icon: String? = null
+                var categoryId: String? = null
+                var containerExt: String? = null
+
+                reader.beginObject()
+                while (reader.hasNext()) {
+                    val key = reader.nextName()
+                    when (key) {
+                        "name" -> name = reader.nextString() ?: ""
+                        "stream_id" -> streamId = try { reader.nextInt() } catch (_: Exception) { 0 }
+                        "series_id" -> seriesId = try { reader.nextInt() } catch (_: Exception) { 0 }
+                        "stream_icon", "cover" -> icon = try { reader.nextString() } catch (_: Exception) { null }
+                        "category_id" -> categoryId = try { reader.nextString() } catch (_: Exception) { null }
+                        "container_extension" -> containerExt = try { reader.nextString() } catch (_: Exception) { null }
+                        else -> reader.skipValue()
+                    }
+                }
+                reader.endObject()
+
+                if (name.isNotEmpty()) {
+                    batch.add(
+                        com.veltrix.tv.data.local.SearchIndexEntity(
+                            name = name,
+                            nameLower = name.lowercase(),
+                            icon = icon,
+                            type = type,
+                            streamId = streamId,
+                            seriesId = seriesId,
+                            categoryId = categoryId,
+                            containerExtension = containerExt
+                        )
+                    )
+                    count++
+
+                    if (batch.size >= batchSize) {
+                        dao.insertAllSync(batch.toList())
+                        batch.clear()
+                    }
+                }
+            }
+
+            reader.endArray()
+            reader.close()
+
+            if (batch.isNotEmpty()) {
+                dao.insertAllSync(batch.toList())
+                batch.clear()
+            }
+        } catch (_: Exception) {
+            if (batch.isNotEmpty()) {
+                try { dao.insertAllSync(batch.toList()) } catch (_: Exception) {}
+                batch.clear()
+            }
+        } finally {
+            body.close()
+        }
+
+        return count
     }
 
     private fun setupSidebar() {
